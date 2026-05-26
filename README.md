@@ -78,6 +78,48 @@ El endpoint `GET /users` acepta `role` e `is_active` como **query parameters** (
 
 ---
 
+## Ejemplos de peticiones GET y POST
+
+###  GET /users (sin filtros)
+```bash
+curl -X GET "http://localhost:8000/users"
+```
+
+### GET /users con filtros
+```bash
+curl -X GET "http://localhost:8000/users?role=admin&is_active=true"
+```
+
+### GET /users/{user_id}
+```bash
+curl -X GET "http://localhost:8000/users/1"
+```
+
+### POST /users (creación válida)
+```bash
+curl -X POST "http://localhost:8000/users" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Carlos Mendoza",
+    "email": "carlos@example.com",
+    "role": "support",
+    "is_active": true
+  }'
+```
+
+### POST /users (datos inválidos – error 422)
+```bash
+curl -X POST "http://localhost:8000/users" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jo",
+    "email": "correo-mal",
+    "role": "superuser",
+    "is_active": true
+  }'
+```
+---
+
 ## Evidencias de pruebas con capturas de pantalla
 
 A continuación se muestran las capturas realizadas durante las pruebas de la API `device_systems`. Cada imagen demuestra el correcto funcionamiento de los endpoints, las validaciones, el manejo de errores y las cabeceras personalizadas.
@@ -215,3 +257,8 @@ Al desarrollar esta api
 - **Cabeceras personalizadas:** Se añaden fácilmente con `response.headers`.
 
 FastAPI hace que se acelere el desarrollo, reduce errores y produce APIs bien estructuradas y autodocumentadas. Es una excelente opción para proyectos backend modernos.
+
+
+### Link Video Youtube
+
+https://youtu.be/G8Z5m7-ULBk
