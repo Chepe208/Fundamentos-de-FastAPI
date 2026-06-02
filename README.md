@@ -262,7 +262,7 @@ Al desarrollar esta api
 FastAPI hace que se acelere el desarrollo, reduce errores y produce APIs bien estructuradas y autodocumentadas. Es una excelente opción para proyectos backend modernos.
 
 
-### Link Video Youtube
+### Link Video Youtube Evidencia 7
 
 https://youtu.be/G8Z5m7-ULBk
 
@@ -395,13 +395,13 @@ A continuación se muestran las capturas realizadas durante las pruebas de la AP
 
 ### 7. Documentación Swagger UI – endpoints PUT y PATCH
 
-![Swagger PUT PATCH](images/swagger_put_patch.png)
+![Swagger PUT PATCH](images/swagger_put_patch_delete.png)
 
-**Propósito:** Mostrar que la documentación automática de FastAPI incluye los nuevos métodos PUT y PATCH para el recurso `users`.
+**Propósito:** Mostrar que la documentación automática de FastAPI incluye los nuevos métodos PUT, PATCH y DELETE para el recurso `users`.
 
-**Explicación:** En `http://localhost:8000/docs` se listan ahora todos los métodos del CRUD: GET, POST, PUT, PATCH y (próximamente DELETE). Cada endpoint muestra sus parámetros, el esquema de cuerpo esperado y los posibles códigos de respuesta. La documentación se genera automáticamente sin necesidad de escribir código adicional.
+**Explicación:** En `http://localhost:8000/docs` se listan ahora todos los métodos del CRUD: GET, POST, PUT, PATCH y DELETE. Cada endpoint muestra sus parámetros, el esquema de cuerpo esperado y los posibles códigos de respuesta.
 
-### 17. Eliminación exitosa con DELETE – `DELETE /users/1` (código 204)
+### 8. Eliminación exitosa con DELETE – `DELETE /users/1` (código 204)
 
 ![DELETE exitoso](images/delete_exitoso.png)
 
@@ -409,7 +409,7 @@ A continuación se muestran las capturas realizadas durante las pruebas de la AP
 
 **Explicación:** Se envía una petición `DELETE` a `/users/1`. El servidor localiza el usuario, lo elimina de la base de datos en memoria y responde con código `204 No Content`. Este código muestra que fue exitosa pero no hay contenido en el cuerpo de la respuesta, lo que es normal para eliminaciones.
 
-### 18. DELETE con ID inexistente – `DELETE /users/999` (código 404)
+### 9. DELETE con ID inexistente – `DELETE /users/999` (código 404)
 
 ![DELETE 404](images/delete_404.png)
 
@@ -417,10 +417,14 @@ A continuación se muestran las capturas realizadas durante las pruebas de la AP
 
 **Explicación:** Se envía `DELETE /users/999`, un ID que no está registrado. El servidor busca el usuario, no lo encuentra y lanza una excepción `HTTPException` con código `404` y el mensaje `"Usuario no encontrado"`.
 
-### 19. Lista de usuarios después de eliminación – `GET /users`
+### 10. Lista de usuarios después de eliminación – `GET /users`
 
 ![GET después de DELETE](images/users_despues_delete.png)
 
 **Propósito:** Confirmar que el usuario eliminado ya no aparece en la lista de usuarios.
 
 **Explicación:** Después de ejecutar `DELETE /users/1`, se realiza una petición `GET /users`. La respuesta ya no incluye al usuario con ID 1, lo que confirma que la eliminación fue efectiva.
+
+### Link Video Youtube Evidencia 8
+
+https://youtu.be/mbI-lIyH41w
