@@ -25,3 +25,9 @@ class UserResponse(UserBase):
 
     class Config:
         from_attributes = True
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=3, description="Nombre del usuario")
+    email: Optional[EmailStr] = Field(None, description="Email válido")
+    role: Optional[RoleEnum] = Field(None, description="Rol del usuario")
+    is_active: Optional[bool] = Field(None, description="Estado activo/inactivo")

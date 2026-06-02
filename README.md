@@ -339,3 +339,88 @@ def get_user_or_404(user_id: int):
 | 400 | Bad Request | Email duplicado, PATCH sin campos, datos inválidos de negocio |
 | 404 | Not Found | Usuario no existe (por ID) |
 | 422 | Unprocessable Entity | Validación de Pydantic falla (nombre corto, email mal formado, rol no permitido) |
+
+## Evidencias de pruebas con capturas de pantalla evidencia 8
+
+A continuación se muestran las capturas realizadas durante las pruebas de la API `device_systems`.
+
+### 1. Actualización completa con PUT – `PUT /users/1` (código 200)
+
+![PUT exitoso](images/antes_put_exitoso.png)
+![PUT exitoso](images/despues_put_exitoso.png)
+
+**Propósito:** Que se sepa que el endpoint `PUT` reemplaza completamente los datos de un usuario existente.
+
+**Explicación:** Se envía una petición `PUT` a `/users/1` con un JSON que contiene **todos los campos** (`name`, `email`, `role`, `is_active`). El servidor localiza el usuario con ID 1, reemplaza toda su información y devuelve el objeto actualizado con código `200 OK`. El `id` sigue igual.
+
+### 2. PUT con ID inexistente – `PUT /users/999` (código 404)
+
+![PUT 404](images/put_usuario_noencontrado.png)
+
+**Propósito:** Verificar que el endpoint `PUT` retorna un error `404 Not Found` cuando se intenta actualizar un usuario que no existe.
+
+**Explicación:** Se envía una petición `PUT` a `/users/999`, un ID que no está registrado en la base de datos. El servidor busca el usuario, no lo encuentra y lanza una excepción `HTTPException` con código 404 y el mensaje `"Usuario no encontrado"`.
+
+### 3. PUT con email duplicado – `PUT /users/1` (código 400)
+
+![PUT email duplicado](images/put-email-duplicado.png)
+
+**Propósito:** Validar que el endpoint `PUT` rechaza la actualización si el nuevo email ya está siendo usado por otro usuario.
+
+**Explicación:** Se intenta actualizar el usuario con ID 1 cambiando su email a `"dos@example.com"`, correo que ya pertenece al usuario con ID 2. La API detecta el conflicto y responde con `400 Bad Request` y el mensaje `"El email ya está registrado por otro usuario"`, haciendo que no se pueda colocar el mismo correo
+
+### 4. Actualización parcial con PATCH – cambio de rol (código 200)
+
+![PATCH rol](images/patch_rol.png)
+
+**Propósito:** Demostrar que el endpoint `PATCH` puede modificar solo algunos campos de un usuario sin afectar los demás.
+
+**Explicación:** Se envía una petición `PATCH` a `/users/3` con un JSON que tiene solo `"role": "support"`. El servidor actualiza solo ese campo y devuelve el usuario completo con el rol modificado, manteniendo el resto de la información intacta. El código de respuesta es `200 OK`.
+
+### 5. PATCH sin campos – error 400
+
+![PATCH vacío](images/patch_vacio_400.png)
+
+**Propósito:** Verificar que el endpoint `PATCH` rechaza una petición que no incluye ningún campo para actualizar.
+
+**Explicación:** Se envía una petición `PATCH` con un body vacío `{}`. El servidor detecta que no se proporcionó ningún campo válido y responde con `400 Bad Request` y el mensaje `"Debe proporcionar al menos un campo para actualizar"`. Esto evita actualizaciones sin efecto.
+
+### 6. PATCH con email duplicado – error 400
+
+![PATCH email duplicado](images/patch_email_duplicado.png)
+
+**Propósito:** Validar que el endpoint `PATCH` también controla la unicidad del email cuando se intenta actualizar este campo.
+
+**Explicación:** Se envía una petición `PATCH` para cambiar el email del usuario ID 1 a `"dos@example.com"`, correo que ya está en uso por el usuario ID 2. La API rechaza la operación con código `400 Bad Request` y el mensaje `"El email ya está registrado por otro usuario"`.
+
+### 7. Documentación Swagger UI – endpoints PUT y PATCH
+
+![Swagger PUT PATCH](images/swagger_put_patch.png)
+
+**Propósito:** Mostrar que la documentación automática de FastAPI incluye los nuevos métodos PUT y PATCH para el recurso `users`.
+
+**Explicación:** En `http://localhost:8000/docs` se listan ahora todos los métodos del CRUD: GET, POST, PUT, PATCH y (próximamente DELETE). Cada endpoint muestra sus parámetros, el esquema de cuerpo esperado y los posibles códigos de respuesta. La documentación se genera automáticamente sin necesidad de escribir código adicional.
+
+### 17. Eliminación exitosa con DELETE – `DELETE /users/1` (código 204)
+
+![DELETE exitoso](images/delete_exitoso.png)
+
+**Propósito:** Verificar que el endpoint `DELETE` elimina correctamente un usuario existente y responde con `204 No Content`.
+
+**Explicación:** Se envía una petición `DELETE` a `/users/1`. El servidor localiza el usuario, lo elimina de la base de datos en memoria y responde con código `204 No Content`. Este código muestra que fue exitosa pero no hay contenido en el cuerpo de la respuesta, lo que es normal para eliminaciones.
+
+### 18. DELETE con ID inexistente – `DELETE /users/999` (código 404)
+
+![DELETE 404](images/delete_404.png)
+
+**Propósito:** Demostrar que el endpoint `DELETE` retorna `404 Not Found` cuando se intenta eliminar un usuario que no existe.
+
+**Explicación:** Se envía `DELETE /users/999`, un ID que no está registrado. El servidor busca el usuario, no lo encuentra y lanza una excepción `HTTPException` con código `404` y el mensaje `"Usuario no encontrado"`.
+
+### 19. Lista de usuarios después de eliminación – `GET /users`
+
+![GET después de DELETE](images/users_despues_delete.png)
+
+**Propósito:** Confirmar que el usuario eliminado ya no aparece en la lista de usuarios.
+
+**Explicación:** Después de ejecutar `DELETE /users/1`, se realiza una petición `GET /users`. La respuesta ya no incluye al usuario con ID 1, lo que confirma que la eliminación fue efectiva.
