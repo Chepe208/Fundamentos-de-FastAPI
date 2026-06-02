@@ -73,6 +73,9 @@ A continuación se describe cada uno de los **endpoints disponibles** en la API 
 | GET | `/users` | Lista todos los usuarios (con filtros opcionales) | `role` (query, opcional, valores: `admin`, `support`, `user`)<br>`is_active` (query, opcional, `true`/`false`) | 200 OK |
 | GET | `/users/{user_id}` | Obtiene un usuario por su ID | `user_id` (path, entero, requerido) | 200 OK, 404 Not Found |
 | POST | `/users` | Crea un nuevo usuario | Body JSON con los campos: `name`, `email`, `role`, `is_active` | 201 Created, 400 Bad Request, 422 Unprocessable Entity |
+| PUT | `/users/{user_id}` | Actualiza un usuario | Body JSON completo (mismos campos que POST) | 200 OK, 404, 400 |
+| PATCH | `/users/{user_id}` | Actualiza parcialmente un usuario | Body JSON con uno o más campos | 200 OK, 404, 400 |
+| DELETE | `/users/{user_id}` | Elimina un usuario | Ninguno | 204 No Content (o 200 OK), 404 |
 
 El endpoint `GET /users` acepta `role` e `is_active` como **query parameters** (parámetros de consulta). Esto permite filtrar la lista de usuarios sin necesidad de crear múltiples rutas fijas.
 
@@ -262,3 +265,77 @@ FastAPI hace que se acelere el desarrollo, reduce errores y produce APIs bien es
 ### Link Video Youtube
 
 https://youtu.be/G8Z5m7-ULBk
+
+# GA1-220501096-01-AA1-EV08 – FastAPI Intermedio: Evolución de device_systems con CRUD Completo, Manejo de Errores, Swagger/OpenAPI y Dependency Injection
+
+## Estructura del proyecto
+
+Para esta segunda fase, el código se ha reorganizado en capas
+
+device_systems/
+│── app/
+│ │── main.py
+│ │── data/
+│ │ │── users_db.py
+│ │── services/
+│ │ │── user_service.py
+│ │── dependencies/
+│ │ │── user_dependencies.py
+│ │── routes/
+│ │ │── user_routes.py
+│ │── schemas/
+│ │ │── user_schema.py
+│── pyproject.toml
+│── README.md
+
+![Estrutura Actualizada](images/estructura_actualizada.png)
+
+## Manejo de errores y códigos de estado
+
+La API utiliza códigos HTTP para saber el resultado de la operacion:
+
+| Código | Significado | Cuándo ocurre |
+|--------|-------------|----------------|
+| 200 OK | Éxito | GET /users, GET /users/{id}, actualizaciones exitosas |
+| 201 Created | Recurso creado | POST /users (usuario nuevo) |
+| 400 Bad Request | Error del cliente | Email duplicado, PATCH sin datos, datos inválidos |
+| 404 Not Found | Recurso no existe | GET/PUT/PATCH/DELETE con ID inexistente |
+| 422 Unprocessable Entity | Validación fallida | Campos con formato incorrecto (email, role, longitud) |
+
+Los errores se manejan mediante `HTTPException`, lanzando el código y un mensaje descriptivo. Por ejemplo:
+
+```python
+raise HTTPException(
+    status_code=status.HTTP_404_NOT_FOUND,
+    detail="Usuario no encontrado"
+)
+```
+
+## Dependency Injection (Depends())
+
+FastAPI permite inyectar dependencias mediante la función `Depends()`.
+
+### Dependencias implementadas
+
+- **`get_user_or_404(user_id: int)`**  
+  Recibe un ID desde la ruta, busca el usuario y si no existe lanza un error 404. Se usa en `GET /users/{user_id}` y en los futuros endpoints de actualización y eliminación.
+
+```python
+# app/dependencies/user_dependencies.py
+def get_user_or_404(user_id: int):
+    usuario = obtener_por_id(user_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return usuario
+```
+
+## Códigos de estado HTTP usados
+
+| Código | Significado | Cuándo se usa |
+|--------|-------------|----------------|
+| 200 | OK | GET, PUT, PATCH exitosos |
+| 201 | Created | POST exitoso (usuario creado) |
+| 204 | No Content | DELETE exitoso (sin contenido) |
+| 400 | Bad Request | Email duplicado, PATCH sin campos, datos inválidos de negocio |
+| 404 | Not Found | Usuario no existe (por ID) |
+| 422 | Unprocessable Entity | Validación de Pydantic falla (nombre corto, email mal formado, rol no permitido) |
