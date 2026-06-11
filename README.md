@@ -559,3 +559,40 @@ En `UserResponse` se agregó `from_attributes = True`. Esto permite que FastAPI 
 ### Configuración en Pydantic
 
 ![Schemas Pydantic](images/schemas_pydantic.png)
+
+## Dependencia de base de datos (get_db)
+
+Se creó el archivo `app/dependencies/database_dependency.py` que re-exporta la función `get_db()` desde `app/database/connection.py`. Esta función se usará en los endpoints (rutas) para obtener una sesión de base de datos mediante `Depends(get_db)`.
+
+### Código de la dependencia
+
+```python
+from app.database.connection import get_db
+```
+
+## Operaciones CRUD con SQLAlchemy en `user_service.py`
+
+Se reescribió el archivo `app/services/user_service.py` para que todas las operaciones CRUD se realicen sobre la base de datos real usando SQLAlchemy, en lugar de la lista en memoria.
+
+### Nuevas funciones
+
+| Función | Propósito |
+|---------|-----------|
+| `crear_usuario(db, user_data)` | Inserta un nuevo registro en la tabla `users` |
+| `obtener_todos(db, skip, limit)` | Lista usuarios con paginación |
+| `obtener_por_id(db, user_id)` | Busca un usuario por su clave primaria |
+| `obtener_por_email(db, email)` | Útil para validar unicidad |
+| `actualizar_usuario_completo(db, user_id, user_data)` | Reemplaza todos los campos del usuario |
+| `actualizar_usuario_parcial(db, user_id, user_data)` | Actualiza solo los campos enviados (PATCH) |
+| `eliminar_usuario(db, user_id)` | Elimina un registro |
+| `filtrar_por_rol`, `filtrar_por_estado`, `filtrar_rol_estado` | Consultas filtradas |
+
+Todas las funciones reciben la sesión de base de datos (`db: Session`) como primer parámetro, la cual será inyectada desde los endpoints mediante `Depends(get_db)`.
+
+![Nuevo user_service con SQLAlchemy](images/user_service_sqlalchemy.png)
+
+**Explicación:**  
+- Cada función ahora usa el modelo `User` (SQLAlchemy) y ejecuta consultas reales.
+- Para las operaciones de modificación (`add`, `update`, `delete`) se hace `commit()` para persistir los cambios.
+- Se maneja la conversión de `Enum` a string en las actualizaciones.
+- Se mantiene la misma interfaz que en la versión anterior, pero ahora trabaja con base de datos.
