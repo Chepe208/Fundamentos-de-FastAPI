@@ -363,7 +363,7 @@ A continuación se muestran las capturas realizadas durante las pruebas de la AP
 
 ### 3. PUT con email duplicado – `PUT /users/1` (código 400)
 
-![PUT email duplicado](images/put-email-duplicado.png)
+![PUT email duplicado](images/put_email_duplicado.png)
 
 **Propósito:** Validar que el endpoint `PUT` rechaza la actualización si el nuevo email ya está siendo usado por otro usuario.
 
@@ -428,3 +428,37 @@ A continuación se muestran las capturas realizadas durante las pruebas de la AP
 ### Link Video Youtube Evidencia 8
 
 https://youtu.be/mbI-lIyH41w
+
+# GA1-220501096-01-AA1-EV09 – FastAPI con SQLAlchemy: Persistencia de Datos y CRUD sobre Base de Datos en device_systems
+
+## Estructura del proyecto
+
+Se ha reorganizado el proyecto añadiendo las carpetas `database/` y `models/` que es donde estara la configuración de conexión a la base de datos y el modelo SQLAlchemy. La estructura actual es la siguiente:
+
+![Estructura del proyecto](images/estructura_proyecto3.png)
+
+**Explicación:** Se crearon las carpetas `database/` y `models/` dentro de `app/` para separar la lógica de conexión a la base de datos y la definición de las tablas. Las carpetas existentes (`routes/`, `schemas/`, `services/`, `dependencies/`) se mantienen y serán modificadas para trabajar con la base de datos real.
+
+---
+
+## Instalación de dependencias
+
+Se añadio **SQLAlchemy** como ORM para interactuar con la base de datos relacional. A continuación se muestra la instalación y el archivo `requirements.txt` actualizado.
+
+### Instalación de SQLAlchemy
+
+![Instalación SQLAlchemy](images/instalacion_sqlalchemy.png)
+
+**Propósito:** Incorporar SQLAlchemy y otras dependencias necesarias al proyecto.
+
+**Explicación:** Se ejecutó `pip install fastapi uvicorn sqlalchemy pydantic email-validator` dentro del entorno virtual. La instalación fue exitosa, como se observa en la terminal.
+
+### Archivo requirements.txt actualizado
+
+![requirements.txt con SQLAlchemy](images/requirements_con_sqlalchemy.png)
+
+**Propósito:** Mantener un registro de todas las dependencias necesarias.
+
+**Explicación:** El comando `pip freeze > requirements.txt` generó el archivo incluyendo `sqlalchemy` junto con las demás dependencias (fastapi, uvicorn, email-validator, etc.). Esto facilita la replicación del entorno en otros equipos.
+
+---
