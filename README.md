@@ -500,3 +500,62 @@ En `app/main.py` se importó el modelo `User` antes de llamar a `Base.metadata.c
 | `role` | VARCHAR(20) | NOT NULL | Rol del usuario (`admin`, `support`, `user`) |
 | `is_active` | BOOLEAN | NOT NULL, DEFAULT True | Activo por defecto |
 | `created_at` | DATETIME | NOT NULL, DEFAULT CURRENT_TIMESTAMP | Fecha de creación automática |
+
+## Schemas Pydantic actualizados
+
+Se actualizaron los schemas Pydantic para trabajar con la base de datos y el nuevo campo `created_at`.
+
+### Schemas definidos
+
+| Schema | Propósito | Campos |
+|--------|-----------|--------|
+| `UserCreate` | Crear usuario | name, email, role, is_active |
+| `UserUpdate` | Actualización completa | name, email, role, is_active (todos obligatorios) |
+| `UserPatch` | Actualización parcial | name?, email?, role?, is_active? (todos opcionales) |
+| `UserResponse` | Respuesta de la API | id, name, email, role, is_active, **created_at** |
+
+### Código actualizado
+
+```python
+from pydantic import BaseModel, Field, EmailStr
+from enum import Enum
+from typing import Optional
+from datetime import datetime
+
+class RoleEnum(str, Enum):
+    admin = "admin"
+    support = "support"
+    user = "user"
+
+class UserBase(BaseModel):
+    name: str = Field(..., min_length=3)
+    email: EmailStr = Field(...)
+    role: RoleEnum = Field(default=RoleEnum.user)
+    is_active: bool = Field(default=True)
+
+class UserCreate(UserBase):
+    pass
+
+class UserUpdate(UserBase):
+    pass
+
+class UserPatch(BaseModel):
+    name: Optional[str] = Field(None, min_length=3)
+    email: Optional[EmailStr] = Field(None)
+    role: Optional[RoleEnum] = Field(None)
+    is_active: Optional[bool] = Field(None)
+
+class UserResponse(UserBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+```
+## Configuración importante
+
+En `UserResponse` se agregó `from_attributes = True`. Esto permite que FastAPI convierta automáticamente un objeto SQLAlchemy (`User`) a un schema Pydantic, sin necesidad de transformarlo manualmente.
+
+### Configuración en Pydantic
+
+![Schemas Pydantic](images/schemas_pydantic.png)
