@@ -477,3 +477,26 @@ Se creó el archivo `app/database/connection.py` para gestionar la conexión con
 En `app/main.py` se añadió **Base.metadata.create_all(bind=engine)** antes de crear la app FastAPI. Al ejecutar el servidor por primera vez, SQLAlchemy crea automáticamente el archivo `device_systems.db` en la raíz del proyecto pero todavía esta vacío, porque el modelo User se creará en la fase 5.
 
 ![Generacion del archivo](images/base_datos_generada.png)
+
+## Modelo SQLAlchemy User
+
+Se creó el modelo `User` en `app/models/user_model.py`. Este modelo define la estructura de la tabla `users` en la base de datos.
+
+### Generación de la tabla
+
+En `app/main.py` se importó el modelo `User` antes de llamar a `Base.metadata.create_all(bind=engine)`. Al ejecutar el servidor, SQLAlchemy creó automáticamente la tabla `users` en la base de datos `device_systems.db`.
+
+### Vista de la tabla desde DB Browser for SQLite
+
+![Tabla users generada](images/tabla_users_generada.png)
+
+### Explicación de los campos y restricciones
+
+| Campo | Tipo | Restricción | Descripción |
+|---------|---------|---------|---------|
+| `id` | INTEGER | PRIMARY KEY, INDEX | Identificador único |
+| `name` | VARCHAR(100) | NOT NULL | Nombre obligatorio |
+| `email` | VARCHAR(255) | UNIQUE, NOT NULL, INDEX | Email único y obligatorio |
+| `role` | VARCHAR(20) | NOT NULL | Rol del usuario (`admin`, `support`, `user`) |
+| `is_active` | BOOLEAN | NOT NULL, DEFAULT True | Activo por defecto |
+| `created_at` | DATETIME | NOT NULL, DEFAULT CURRENT_TIMESTAMP | Fecha de creación automática |

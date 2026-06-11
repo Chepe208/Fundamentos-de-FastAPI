@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from app.routes.user_routes import router
 from app.database.connection import engine, Base
 
+from app.models.user_model import User 
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
