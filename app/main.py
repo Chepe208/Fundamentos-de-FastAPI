@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from app.routes.user_routes import router
+from app.database.connection import engine, Base
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="device_systems API",
@@ -7,7 +10,6 @@ app = FastAPI(
     version="1.0"
 )
 
-# Incluir las rutas de usuarios
 app.include_router(router)
 @app.get("/")
 def root():

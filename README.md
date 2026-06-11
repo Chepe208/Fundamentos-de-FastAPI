@@ -462,3 +462,18 @@ Se añadio **SQLAlchemy** como ORM para interactuar con la base de datos relacio
 **Explicación:** El comando `pip freeze > requirements.txt` generó el archivo incluyendo `sqlalchemy` junto con las demás dependencias (fastapi, uvicorn, email-validator, etc.). Esto facilita la replicación del entorno en otros equipos.
 
 ---
+
+## Configuración de la base de datos (SQLite)
+
+Se creó el archivo `app/database/connection.py` para gestionar la conexión con SQLite. Este archivo contiene:
+
+- **Engine**: motor que maneja el pool de conexiones.
+- **SessionLocal**: fábrica de sesiones para interactuar con la base de datos.
+- **Base**: clase padre para todos los modelos SQLAlchemy.
+- **get_db()**: función generadora que inyecta una sesión por petición.
+
+### Generación del archivo de base de datos
+
+En `app/main.py` se añadió **Base.metadata.create_all(bind=engine)** antes de crear la app FastAPI. Al ejecutar el servidor por primera vez, SQLAlchemy crea automáticamente el archivo `device_systems.db` en la raíz del proyecto pero todavía esta vacío, porque el modelo User se creará en la fase 5.
+
+![Generacion del archivo](images/base_datos_generada.png)
