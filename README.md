@@ -596,3 +596,182 @@ Todas las funciones reciben la sesión de base de datos (`db: Session`) como pri
 - Para las operaciones de modificación (`add`, `update`, `delete`) se hace `commit()` para persistir los cambios.
 - Se maneja la conversión de `Enum` a string en las actualizaciones.
 - Se mantiene la misma interfaz que en la versión anterior, pero ahora trabaja con base de datos.
+
+# Pruebas de la API
+
+## 1. Creación de usuario válido POST /users (201)
+
+**Propósito:** Verificar que se puede crear un usuario correctamente en la base de datos.
+
+**Explicación:** Se envía una petición POST con los campos `name`, `email`, `role` e `is_active`. La API valida los datos, los guarda en SQLite y responde con código **201 Created**. La respuesta incluye el usuario creado con su `id` asignado por la base de datos y la fecha `created_at`.
+
+![Creación de usuario](images/post_usuario_exitoso.png)
+
+---
+
+## 2. Email duplicado POST /users (400)
+
+**Propósito:** Validar que la API rechaza un segundo registro con el mismo correo electrónico.
+
+**Explicación:** Se intenta crear un usuario con un email que ya existe en la base de datos. La API detecta la duplicación, lanza una excepción `HTTPException` y responde con código **400 Bad Request** y el mensaje *"El email ya está registrado"*. Esto previene duplicados a nivel de aplicación.
+
+![Email duplicado](images/post_email_duplicado.png)
+
+---
+
+## 3. Datos inválidos POST /users (422)
+
+**Propósito:** Mostrar cómo Pydantic valida automáticamente longitud, formato de email y valores permitidos.
+
+**Explicación:** Se envía un JSON con `name` de solo 2 caracteres, `email` sin `@` y `role` no permitido (`superuser`). Pydantic rechaza la petición antes de llegar a la base de datos y responde con código **422 Unprocessable Entity**, detallando cada error.
+
+![Datos inválidos](images/post_datos_invalidos.png)
+
+---
+
+## 4. Lista de usuarios GET /users (200)
+
+**Propósito:** Verificar que se pueden obtener todos los usuarios almacenados en la base de datos.
+
+**Explicación:** Se realiza `GET /users`. La API consulta la tabla `users` y devuelve un arreglo con todos los registros. Cada usuario incluye `id`, `name`, `email`, `role`, `is_active` y `created_at`.
+
+![Lista de usuarios](images/get_users.png)
+
+---
+
+## 5. Filtro por rol GET /users?role=admin (200)
+
+**Propósito:** Comprobar que el query parameter `role` filtra correctamente los usuarios por su rol.
+
+**Explicación:** Se solicita `GET /users?role=admin`. La API construye una consulta SQL con `filter(User.role == "admin")` y retorna solo los usuarios administradores.
+
+![Filtro por rol](images/get_users_admin.png)
+
+---
+
+## 6. Filtro por estado activo GET /users?is_active=true (200)
+
+**Propósito:** Validar que el query parameter `is_active` filtra los usuarios activos.
+
+**Explicación:** Se ejecuta `GET /users?is_active=true`. La API aplica `filter(User.is_active == True)` y devuelve únicamente los usuarios activos.
+
+![Filtro activos](images/get_users_activos.png)
+
+---
+
+## 7. Obtener usuario por ID existente GET /users/1 (200)
+
+**Propósito:** Demostrar el correcto uso de path parameter para recuperar un recurso específico.
+
+**Explicación:** Se consulta `GET /users/1`. La API busca el usuario con `id=1` en la base de datos. Si existe, lo retorna con código **200 OK**.
+
+![Usuario encontrado](images/get_user_id.png)
+
+---
+
+## 8. Usuario no encontrado GET /users/999 (404)
+
+**Propósito:** Verificar el manejo de IDs inexistentes con error **404 Not Found**.
+
+**Explicación:** Se solicita un ID que no existe en la base de datos (`999`). La API responde con el mensaje *"Usuario no encontrado"*.
+
+![Usuario no encontrado](images/get_user_404.png)
+
+---
+
+## 9. Actualización completa con PUT  PUT /users/1 (200)
+
+**Propósito:** Demostrar que PUT reemplaza completamente todos los campos de un usuario existente.
+
+**Explicación:** Se envía una petición PUT con un JSON que contiene todos los campos. La API actualiza el registro en la base de datos y devuelve el objeto modificado.
+
+![PUT exitoso](images/put_usuario_exitoso.png)
+
+---
+
+## 10. PUT con email duplicado  PUT /users/1 (400)
+
+**Propósito:** Validar que PUT rechaza cambiar el email a uno ya usado por otro usuario.
+
+**Explicación:** Se intenta actualizar el usuario con un email ya registrado por otro usuario. La API detecta el conflicto y responde con **400 Bad Request**.
+
+![PUT email duplicado](images/put_email_duplicado.png)
+
+--- 
+
+## 11. PUT con ID inexistente PUT /users/999 (404)
+
+**Propósito:** Verificar que PUT retorna **404 Not Found** cuando se intenta actualizar un recurso que no existe.
+
+**Explicación:** La API no encuentra el usuario solicitado y responde con el mensaje *"Usuario no encontrado"*.
+
+![PUT usuario inexistente](images/put_404.png)
+
+---
+
+## 12. Actualización parcial con PATCH cambiar rol (200)
+
+**Propósito:** Demostrar que PATCH modifica solo los campos enviados sin afectar los demás.
+
+**Explicación:** Se envía `PATCH /users/1` con `{"role":"support"}`. La API actualiza únicamente el rol y mantiene intactos los demás datos.
+
+![PATCH exitoso](images/patch_role.png)
+
+---
+
+## 13. PATCH vacío error 400
+
+**Propósito:** Verificar que PATCH rechaza una petición sin campos para actualizar.
+
+**Explicación:** Se envía `PATCH /users/1` con `{}`. La API responde con **400 Bad Request**.
+
+![PATCH vacío](images/patch_vacio.png)
+
+---
+
+## 14. PATCH con ID inexistente PATCH /users/999 (404)
+
+**Propósito:** Validar que PATCH responde con **404 Not Found** cuando el recurso no existe.
+
+**Explicación:** Se intenta actualizar parcialmente un usuario inexistente.
+
+![PATCH 404](images/patch_404.png)
+
+---
+
+## 15. Eliminación exitosa DELETE /users/1 (204)
+
+**Propósito:** Verificar que DELETE elimina correctamente un usuario existente.
+
+**Explicación:** Se envía `DELETE /users/1`. La API elimina el registro y responde con **204 No Content**.
+
+![DELETE exitoso](images/delete_exitoso2.png)
+
+---
+
+## 16. DELETE con ID inexistente DELETE /users/999 (404)
+
+**Propósito:** Comprobar que DELETE retorna **404 Not Found** cuando el usuario no existe.
+
+**Explicación:** La API responde con el mensaje *"Usuario no encontrado"*.
+
+![DELETE 404](images/delete_404_2.png)
+
+---
+
+## 17. Swagger UI final Todos los endpoints
+
+**Propósito:** Mostrar la documentación interactiva generada automáticamente por FastAPI.
+
+**Explicación:** En `http://localhost:8000/docs` se listan todos los endpoints CRUD, los schemas Pydantic y los códigos de respuesta esperados.
+
+![Swagger UI](images/swagger_ui_final1.png)
+![Swagger UI](images/swagger_ui_final2.png)
+
+## Reflexion Final
+
+Migrar la API de una lista en memoria a una base de datos real con SQLAlchemy fue mucho. Ya los datos no se pierden cuando se reiniciar el servidor, ya se puede hacer consultas complejas con filtros y ordenamientos, y garantias a restricciones como UNIQUE y NOT NULL. Además, separar el modelo de base de datos de SQLAlchemy de los schemas de la API que es Pydantic me ha enseñado a organizar mejor el código y a entender que cada capa tiene su responsabilidad. La persistencia no es solo guardar datos, es construir aplicaciones confiables, escalables y profesionales.
+
+### Link Video Youtube Evidencia 9
+
+https://youtu.be/5dIhqDU1FQ0
