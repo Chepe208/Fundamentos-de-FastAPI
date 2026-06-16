@@ -785,3 +785,15 @@ Se ha creado la rama `device_systems_alembic_relaciones` para desarrollar las nu
 ![Swagger UI Base](images/inicio_ev10_swagger.png)
 
 **Explicación:** La API de usuarios sigue operativa antes de agregar los nuevos modelos. Esto confirma que la base de la EV09 está estable y lista para evolucionar.
+
+##  Fase 2 - Actualizar la estructura del proyecto
+Se han agregado los archivos base para los nuevos recursos `devices` y `loans`:
+
+- **Modelos**: `device_model.py`, `loan_model.py` (en `app/models/`)
+- **Schemas**: `device_schema.py`, `loan_schema.py` (en `app/schemas/`)
+- **Rutas**: `device_routes.py`, `loan_routes.py` (en `app/routes/`)
+- **Servicios**: `device_service.py`, `loan_service.py` (en `app/services/`)
+
+![Estructura del proyecto con nuevos archivos](images/estructura_ev10_fase2.png)
+
+**Explicación:** La estructura ahora incluye los nuevos archivos para los modelos, schemas, rutas y servicios. El proyecto sigue funcionando sin errores, ya que los nuevos archivos no afectan la funcionalidad existente de `users`.
