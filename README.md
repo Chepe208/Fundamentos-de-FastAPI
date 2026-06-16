@@ -775,3 +775,13 @@ Migrar la API de una lista en memoria a una base de datos real con SQLAlchemy fu
 ### Link Video Youtube Evidencia 9
 
 https://youtu.be/5dIhqDU1FQ0
+
+# Proyecto-Final-v1 GA1-220501096-01-AA1-EV10 – FastAPI Avanzado: Migraciones con Alembic, Asociaciones de Modelos y Consultas con Joins en device_systems
+
+## Fase 1 - Retomar el proyecto anterior
+
+Se ha creado la rama `device_systems_alembic_relaciones` para desarrollar las nuevas funcionalidades sin afectar la rama `main` (versión estable anterior). El proyecto base (`users`, CRUD, SQLAlchemy) funciona correctamente y se procederá a agregar los modelos `Device` y `Loan`, sus relaciones, migraciones con Alembic y consultas avanzadas.
+
+![Swagger UI Base](images/inicio_ev10_swagger.png)
+
+**Explicación:** La API de usuarios sigue operativa antes de agregar los nuevos modelos. Esto confirma que la base de la EV09 está estable y lista para evolucionar.
