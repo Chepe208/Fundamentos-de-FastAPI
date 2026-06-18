@@ -21,15 +21,15 @@ class DeviceBasicInfo(BaseModel):
     class Config:
         from_attributes = True
 
-class LoanBase(BaseModel):
+class LoanCreate(BaseModel):
     user_id: int = Field(..., description="ID del usuario que solicita el préstamo")
     device_id: int = Field(..., description="ID del dispositivo a prestar")
 
-class LoanCreate(LoanBase):
-    pass
-
 class LoanUpdate(BaseModel):
     status: Optional[str] = Field(None, description="Estado del préstamo: active, returned, overdue")
+
+class LoanReturn(BaseModel):
+    pass
 
 class LoanResponse(BaseModel):
     id: int

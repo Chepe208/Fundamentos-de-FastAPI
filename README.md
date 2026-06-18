@@ -1367,3 +1367,68 @@ Con los nuevos endpoints, Swagger UI ahora muestra el recurso `Dispositivos` com
 
 ![Swagger con dispositivos](images/swagger_devices_crud.png)
 ![Swagger con dispositivos](images/swagger_devices_crud2.png)
+
+## Fase 9 - Implementar gestión de préstamos
+
+Se implementaron los endpoints para gestionar préstamos de dispositivos a usuarios, incluyendo la lógica de disponibilidad y devolución.
+
+### Servicio (`loan_service.py`)
+
+Se creó `app/services/loan_service.py` con las funciones para crear préstamos, listarlos, obtener por ID y devolver.
+
+![loan_service.py](images/loan_service_codigo.png)
+
+**Propósito:** Contener toda la lógica de negocio para préstamos.
+
+**Explicación:** El servicio incluye validaciones de existencia de usuario y dispositivo, disponibilidad del dispositivo al crear, y actualización de disponibilidad tanto al prestar como al devolver. También impide devolver un préstamo ya devuelto.
+
+### Pruebas de los endpoints
+
+#### Creación de préstamo exitosa (POST)
+![POST préstamo exitoso](images/post_loan_exitoso.png)
+
+**Propósito:** Verificar que se puede crear un préstamo correctamente.
+
+**Explicación:** Se envía `user_id` y `device_id`. La API valida que el usuario y el dispositivo existan, y que el dispositivo esté disponible. Luego crea el préstamo con `status="active"` y `loan_date` automática, y cambia `is_available` del dispositivo a `False`. Responde con `201 Created`.
+
+#### Error: Dispositivo no disponible (409)
+![POST préstamo dispositivo no disponible](images/post_loan_device_not_available.png)
+
+**Propósito:** Validar que no se puede prestar un dispositivo ya prestado.
+
+**Explicación:** Se intenta crear otro préstamo con el mismo dispositivo. La API detecta que `is_available` es `False` y responde con `409 Conflict`.
+
+#### Error: Usuario inexistente (404)
+![POST préstamo usuario inexistente](images/post_loan_user_not_found.png)
+
+**Propósito:** Verificar que se valida la existencia del usuario.
+
+**Explicación:** Se envía un `user_id` que no existe. La API retorna `404 Not Found`.
+
+#### Devolución exitosa (PATCH /return)
+![PATCH devolución exitosa](images/patch_loan_return_exitoso.png)
+
+**Propósito:** Verificar que se puede devolver un dispositivo.
+
+**Explicación:** Se envía `PATCH /loans/1/return`. La API marca el préstamo como `"returned"`, asigna `return_date` automática y cambia `is_available` del dispositivo a `True`. Responde con `200 OK`.
+
+#### Error: Préstamo ya devuelto (409)
+![PATCH devolución duplicada](images/patch_loan_return_409.png)
+
+**Propósito:** Validar que no se puede devolver un préstamo ya devuelto.
+
+**Explicación:** Se intenta devolver el mismo préstamo nuevamente. La API responde con `409 Conflict`.
+
+#### Estado del dispositivo después del préstamo
+![Dispositivo no disponible](images/device_after_loan.png)
+
+**Propósito:** Confirmar que el dispositivo queda como no disponible.
+
+**Explicación:** `GET /devices/1` después del POST muestra `"is_available": false`.
+
+#### Estado del dispositivo después de la devolución
+![Dispositivo disponible](images/device_after_return.png)
+
+**Propósito:** Confirmar que el dispositivo vuelve a estar disponible.
+
+**Explicación:** `GET /devices/1` después del PATCH de devolución muestra `"is_available": true`.
