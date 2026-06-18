@@ -1090,3 +1090,165 @@ También se confirmó que las claves foráneas (`Foreign Keys`) fueron creadas c
 ![Tabla loans generada](images/tabla_loan_generada.png)
 
 ---
+
+# Fase 6 - Definir asociaciones entre modelos
+
+## Objetivo
+
+Implementar relaciones bidireccionales entre los modelos `User`, `Device` y `Loan` utilizando `relationship()` y `back_populates`. Esto permite navegar entre objetos relacionados de forma natural y simplifica las consultas a la base de datos.
+
+---
+
+## Relaciones definidas
+
+| Relación | Tipo | Descripción |
+|-----------|-----------|-----------|
+| `User.loans` → `Loan` | One-to-Many | Un usuario puede tener muchos préstamos |
+| `Device.loans` → `Loan` | One-to-Many | Un dispositivo puede tener muchos préstamos históricos |
+| `Loan.user` → `User` | Many-to-One | Cada préstamo pertenece a un usuario |
+| `Loan.device` → `Device` | Many-to-One | Cada préstamo está asociado a un dispositivo |
+
+---
+
+## 1. Relación entre User y Loan
+
+### Código implementado en `user_model.py`
+
+```python
+loans = relationship("Loan", back_populates="user")
+```
+
+### Propósito
+
+Establecer la relación entre un usuario y sus préstamos.
+
+### Explicación
+
+Se agregó la siguiente relación al modelo `User`:
+
+```python
+loans = relationship("Loan", back_populates="user")
+```
+
+Esta configuración permite acceder a todos los préstamos asociados a un usuario mediante:
+
+```python
+usuario.loans
+```
+
+Gracias a esta relación, SQLAlchemy puede recuperar automáticamente todos los préstamos relacionados con un usuario específico.
+
+![Relación User y Loans](images/relacion_user_loans.png)
+
+---
+
+## 2. Relación entre Device y Loan
+
+### Código implementado en `device_model.py`
+
+```python
+loans = relationship("Loan", back_populates="device")
+```
+
+### Propósito
+
+Establecer la relación entre un dispositivo y su historial de préstamos.
+
+### Explicación
+
+Se agregó la siguiente relación al modelo `Device`:
+
+```python
+loans = relationship("Loan", back_populates="device")
+```
+
+Esta relación permite consultar todos los préstamos asociados a un dispositivo mediante:
+
+```python
+dispositivo.loans
+```
+
+De esta forma es posible conocer el historial completo de préstamos de cualquier dispositivo registrado.
+
+
+![Relación Device y Loans](images/relacion_device_loans.png)
+
+---
+
+## 3. Relación entre Loan, User y Device
+
+### Código implementado en `loan_model.py`
+
+```python
+user = relationship("User", back_populates="loans")
+device = relationship("Device", back_populates="loans")
+```
+
+### Propósito
+
+Conectar cada préstamo con el usuario y el dispositivo asociados.
+
+### Explicación
+
+Se agregaron dos relaciones al modelo `Loan`:
+
+```python
+user = relationship("User", back_populates="loans")
+device = relationship("Device", back_populates="loans")
+```
+
+Estas relaciones permiten acceder directamente a los datos relacionados desde un préstamo:
+
+- Obtener el usuario asociado:
+
+```python
+prestamo.user
+```
+
+- Obtener el dispositivo asociado:
+
+```python
+prestamo.device
+```
+
+Gracias a esto, cada préstamo puede navegar fácilmente hacia su usuario y dispositivo sin necesidad de realizar consultas manuales adicionales.
+
+![Relaciones del modelo Loan](images/relaciones_loan.png)
+
+---
+
+## Fase 7 - Crear schemas Pydantic
+
+Se crearon los schemas Pydantic para los nuevos recursos `devices` y `loans`. Estos schemas definen la estructura de los datos de entrada y salida de la API, garantizando validación automática y documentación clara.
+
+### Schemas para dispositivos (`device_schema.py`)
+
+| Schema | Propósito | Campos |
+|--------|-----------|--------|
+| `DeviceCreate` | Crear un nuevo dispositivo | name, serial_number, device_type, brand (opcional), is_available |
+| `DeviceUpdate` | Actualizar completamente un dispositivo | Mismos que DeviceCreate |
+| `DeviceResponse` | Respuesta de la API | Todos los campos anteriores + id, created_at |
+
+![device_schema.py](images/device_schema_codigo.png)
+
+**Propósito:** Definir la estructura de datos para el recurso `devices`.
+
+**Explicación:** Se creó `app/schemas/device_schema.py` con los schemas de entrada (`DeviceCreate`, `DeviceUpdate`) y salida (`DeviceResponse`). Todos los campos tienen validaciones (longitud mínima, tipos) y descripciones para la documentación automática.
+
+### Schemas para préstamos (`loan_schema.py`)
+
+| Schema | Propósito | Campos |
+|--------|-----------|--------|
+| `LoanCreate` | Crear un nuevo préstamo | user_id, device_id |
+| `LoanUpdate` | Actualizar estado del préstamo | status (opcional) |
+| `LoanResponse` | Respuesta simple de préstamo | id, user_id, device_id, loan_date, return_date, status |
+| `LoanDetailResponse` | Respuesta detallada con información relacionada | id, loan_date, return_date, status + información del usuario (`UserBasicInfo`) y dispositivo (`DeviceBasicInfo`) |
+| `UserBasicInfo` | Info básica de usuario (para respuestas anidadas) | id, name, email |
+| `DeviceBasicInfo` | Info básica de dispositivo (para respuestas anidadas) | id, name, serial_number, device_type, brand, is_available |
+
+![loan_schema.py](images/loan_schema_codigo1.png)
+![loan_schema.py](images/loan_schema_codigo2.png)
+
+**Propósito:** Definir la estructura de datos para el recurso `loans`.
+
+**Explicación:** Se creó `app/schemas/loan_schema.py` con schemas para creación (`LoanCreate`), actualización (`LoanUpdate`), respuesta simple (`LoanResponse`) y respuesta detallada (`LoanDetailResponse`) que incluye información anidada del usuario y dispositivo usando los schemas auxiliares `UserBasicInfo` y `DeviceBasicInfo`.
