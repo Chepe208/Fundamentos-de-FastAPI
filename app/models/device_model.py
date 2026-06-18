@@ -1,6 +1,7 @@
 # app/models/device_model.py
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.database.connection import Base
 
 class Device(Base):
@@ -13,6 +14,8 @@ class Device(Base):
     brand = Column(String(50), nullable=True)
     is_available = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
+
+    loans = relationship("Loan", back_populates="device")
 
     def __repr__(self):
         return f"<Device(id={self.id}, name={self.name}, serial={self.serial_number})>"

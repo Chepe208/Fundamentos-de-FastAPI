@@ -865,3 +865,570 @@ Se instaló Alembic y se configuró para gestionar migraciones de la base de dat
 **Propósito:** Confirmar que las tablas `devices` y `loans` se crearon correctamente.
 
 **Explicación:** Se abrió la base de datos `device_systems.db` con DB Browser for SQLite y se verificó la existencia de las nuevas tablas `devices` y `loans`. Ambas tienen la estructura definida en los modelos (columnas, claves primarias, restricciones).
+
+# Fase 4 - Crear el modelo Device
+
+## Objetivo
+
+Crear el modelo `Device` en `app/models/device_model.py` con todos los campos requeridos y sus restricciones. Este modelo representará los dispositivos tecnológicos disponibles para préstamo.
+
+---
+
+## 1. Código del modelo Device
+
+### Propósito
+
+Definir la estructura de la tabla `devices` en la base de datos usando SQLAlchemy.
+
+### Explicación
+
+Se creó el archivo `app/models/device_model.py` con la clase `Device` que hereda de `Base`. Cada columna se define con su tipo, restricciones y valores por defecto. El campo `serial_number` se configura con `unique=True` para evitar duplicados, `is_available` tiene `default=True` para que los dispositivos estén disponibles por defecto, y `created_at` se asigna automáticamente con la fecha y hora actual mediante `func.now()`.
+
+![Código del modelo Device](images/modelo_device_codigo.png)
+
+---
+
+## 2. Importación del modelo en main.py
+
+### Propósito
+
+Registrar el modelo `Device` para que SQLAlchemy y Alembic lo reconozcan.
+
+### Explicación
+
+Se importó `Device` en `app/main.py` junto con los demás modelos, como `User`. Esto permite que Alembic detecte automáticamente los cambios realizados en `device_model.py` y genere migraciones que incluyan este nuevo modelo.
+
+
+![Importación del modelo Device en main.py](images/main_import_device.png)
+
+---
+
+## 3. Tabla devices generada en la base de datos
+
+### Propósito
+
+Confirmar que la tabla `devices` fue creada correctamente por Alembic.
+
+### Explicación
+
+Se abrió la base de datos `device_systems.db` utilizando DB Browser for SQLite y se verificó que la tabla `devices` existe con todas sus columnas:
+
+- `id` (clave primaria)
+- `name` (obligatorio)
+- `serial_number` (único)
+- `device_type` (obligatorio)
+- `brand` (opcional)
+- `is_available` (booleano con valor predeterminado `True`)
+- `created_at` (fecha de creación automática)
+
+También se confirmó que el campo `serial_number` posee la restricción `UNIQUE`, garantizando que no existan números de serie duplicados.
+
+![Tabla devices generada](images/tabla_device_generada.png)
+
+---
+
+# Fase 5 - Crear el modelo Loan
+
+## objetivo
+
+Crear el archivo `app/models/loan_model.py`. El modelo `Loan` debe representar el préstamo de un dispositivo a un usuario.
+
+---
+
+## 1. Código del modelo Loan
+
+### Propósito
+
+Definir la estructura de la tabla `loans` en la base de datos.
+
+### Explicación
+
+Se creó el archivo `app/models/loan_model.py` con la clase `Loan` que hereda de `Base`. El modelo incluye columnas para `user_id` y `device_id` como `ForeignKey` hacia las tablas `users` y `devices`, respectivamente.
+
+También incluye:
+
+- `loan_date`: fecha de préstamo generada automáticamente.
+- `return_date`: fecha de devolución opcional.
+- `status`: estado del préstamo, con valor predeterminado `active`.
+
+Además, se definieron las relaciones bidireccionales utilizando `relationship()` para permitir la navegación entre usuarios, dispositivos y préstamos.
+
+### Evidencia
+
+![Código del modelo Loan](images/modelo_loan_codigo.png)
+
+---
+
+## 2. Relaciones en los modelos User y Device
+
+### Relación User → Loan
+
+### Propósito
+
+Establecer la relación **One-to-Many** entre `User` y `Loan`.
+
+### Explicación
+
+En `app/models/user_model.py` se agregó la siguiente relación:
+
+```python
+loans = relationship("Loan", back_populates="user")
+```
+
+Esto permite que desde un objeto `User` se pueda acceder a todos sus préstamos mediante `user.loans`, y desde un objeto `Loan` se pueda acceder a su usuario asociado mediante `loan.user`.
+
+![Relación User y Loan](images/user_model_relacion.png)
+
+---
+
+### Relación Device → Loan
+
+### Propósito
+
+Establecer la relación **One-to-Many** entre `Device` y `Loan`.
+
+### Explicación
+
+En `app/models/device_model.py` se agregó la siguiente relación:
+
+```python
+loans = relationship("Loan", back_populates="device")
+```
+
+Esto permite que desde un objeto `Device` se pueda acceder al historial de préstamos mediante `device.loans`, y desde un objeto `Loan` se pueda acceder al dispositivo asociado mediante `loan.device`.
+
+![Relación Device y Loan](images/device_model_relacion.png)
+
+---
+
+## 3. Importación de todos los modelos en main.py
+
+### Propósito
+
+Registrar todos los modelos para que Alembic los detecte y SQLAlchemy los reconozca.
+
+### Explicación
+
+En `app/main.py` se importaron los tres modelos:
+
+- `User`
+- `Device`
+- `Loan`
+
+Esto garantiza que Alembic tenga conocimiento de todas las entidades y sus relaciones al momento de generar migraciones.
+
+
+![Importación de todos los modelos](images/main_import_all_models.png)
+
+---
+
+## 4. Generación y aplicación de migraciones
+
+### Generación de la migración
+
+#### Propósito
+
+Crear una migración que refleje los cambios realizados en los modelos y sus relaciones.
+
+#### Explicación
+
+Se ejecutó el siguiente comando:
+
+```bash
+python -m alembic revision --autogenerate -m "add relationships to loans and update models"
+```
+
+Alembic detectó automáticamente las nuevas relaciones y generó el script de migración correspondiente.
+
+#### Evidencia
+
+![Generación de migración](images/alembic_revision_loan.png)
+
+---
+
+### Aplicación de la migración
+
+#### Propósito
+
+Actualizar la base de datos con las nuevas relaciones y claves foráneas.
+
+#### Explicación
+
+Se ejecutó el siguiente comando:
+
+```bash
+python -m alembic upgrade head
+```
+
+Alembic aplicó la migración y actualizó la base de datos para incluir las relaciones entre las tablas `users`, `devices` y `loans`.
+
+![Aplicación de migración](images/alembic_upgrade_loan.png)
+
+---
+
+## 5. Verificación de la tabla loans
+
+### Propósito
+
+Confirmar que la tabla `loans` fue creada correctamente con todas sus columnas y restricciones.
+
+### Explicación
+
+Se abrió la base de datos `device_systems.db` mediante DB Browser for SQLite y se verificó que la tabla `loans` contiene las siguientes columnas:
+
+| Campo | Descripción |
+|---------|---------|
+| `id` | Clave primaria |
+| `user_id` | Foreign Key hacia `users.id` |
+| `device_id` | Foreign Key hacia `devices.id` |
+| `loan_date` | Fecha automática de préstamo |
+| `return_date` | Fecha de devolución opcional |
+| `status` | Estado actual del préstamo |
+
+También se confirmó que las claves foráneas (`Foreign Keys`) fueron creadas correctamente y mantienen la integridad referencial entre las tablas.
+
+![Tabla loans generada](images/tabla_loan_generada.png)
+
+---
+
+# Fase 6 - Definir asociaciones entre modelos
+
+## Objetivo
+
+Implementar relaciones bidireccionales entre los modelos `User`, `Device` y `Loan` utilizando `relationship()` y `back_populates`. Esto permite navegar entre objetos relacionados de forma natural y simplifica las consultas a la base de datos.
+
+---
+
+## Relaciones definidas
+
+| Relación | Tipo | Descripción |
+|-----------|-----------|-----------|
+| `User.loans` → `Loan` | One-to-Many | Un usuario puede tener muchos préstamos |
+| `Device.loans` → `Loan` | One-to-Many | Un dispositivo puede tener muchos préstamos históricos |
+| `Loan.user` → `User` | Many-to-One | Cada préstamo pertenece a un usuario |
+| `Loan.device` → `Device` | Many-to-One | Cada préstamo está asociado a un dispositivo |
+
+---
+
+## 1. Relación entre User y Loan
+
+### Código implementado en `user_model.py`
+
+```python
+loans = relationship("Loan", back_populates="user")
+```
+
+### Propósito
+
+Establecer la relación entre un usuario y sus préstamos.
+
+### Explicación
+
+Se agregó la siguiente relación al modelo `User`:
+
+```python
+loans = relationship("Loan", back_populates="user")
+```
+
+Esta configuración permite acceder a todos los préstamos asociados a un usuario mediante:
+
+```python
+usuario.loans
+```
+
+Gracias a esta relación, SQLAlchemy puede recuperar automáticamente todos los préstamos relacionados con un usuario específico.
+
+![Relación User y Loans](images/relacion_user_loans.png)
+
+---
+
+## 2. Relación entre Device y Loan
+
+### Código implementado en `device_model.py`
+
+```python
+loans = relationship("Loan", back_populates="device")
+```
+
+### Propósito
+
+Establecer la relación entre un dispositivo y su historial de préstamos.
+
+### Explicación
+
+Se agregó la siguiente relación al modelo `Device`:
+
+```python
+loans = relationship("Loan", back_populates="device")
+```
+
+Esta relación permite consultar todos los préstamos asociados a un dispositivo mediante:
+
+```python
+dispositivo.loans
+```
+
+De esta forma es posible conocer el historial completo de préstamos de cualquier dispositivo registrado.
+
+
+![Relación Device y Loans](images/relacion_device_loans.png)
+
+---
+
+## 3. Relación entre Loan, User y Device
+
+### Código implementado en `loan_model.py`
+
+```python
+user = relationship("User", back_populates="loans")
+device = relationship("Device", back_populates="loans")
+```
+
+### Propósito
+
+Conectar cada préstamo con el usuario y el dispositivo asociados.
+
+### Explicación
+
+Se agregaron dos relaciones al modelo `Loan`:
+
+```python
+user = relationship("User", back_populates="loans")
+device = relationship("Device", back_populates="loans")
+```
+
+Estas relaciones permiten acceder directamente a los datos relacionados desde un préstamo:
+
+- Obtener el usuario asociado:
+
+```python
+prestamo.user
+```
+
+- Obtener el dispositivo asociado:
+
+```python
+prestamo.device
+```
+
+Gracias a esto, cada préstamo puede navegar fácilmente hacia su usuario y dispositivo sin necesidad de realizar consultas manuales adicionales.
+
+![Relaciones del modelo Loan](images/relaciones_loan.png)
+
+---
+
+## Fase 7 - Crear schemas Pydantic
+
+Se crearon los schemas Pydantic para los nuevos recursos `devices` y `loans`. Estos schemas definen la estructura de los datos de entrada y salida de la API, garantizando validación automática y documentación clara.
+
+### Schemas para dispositivos (`device_schema.py`)
+
+| Schema | Propósito | Campos |
+|--------|-----------|--------|
+| `DeviceCreate` | Crear un nuevo dispositivo | name, serial_number, device_type, brand (opcional), is_available |
+| `DeviceUpdate` | Actualizar completamente un dispositivo | Mismos que DeviceCreate |
+| `DeviceResponse` | Respuesta de la API | Todos los campos anteriores + id, created_at |
+
+![device_schema.py](images/device_schema_codigo.png)
+
+**Propósito:** Definir la estructura de datos para el recurso `devices`.
+
+**Explicación:** Se creó `app/schemas/device_schema.py` con los schemas de entrada (`DeviceCreate`, `DeviceUpdate`) y salida (`DeviceResponse`). Todos los campos tienen validaciones (longitud mínima, tipos) y descripciones para la documentación automática.
+
+### Schemas para préstamos (`loan_schema.py`)
+
+| Schema | Propósito | Campos |
+|--------|-----------|--------|
+| `LoanCreate` | Crear un nuevo préstamo | user_id, device_id |
+| `LoanUpdate` | Actualizar estado del préstamo | status (opcional) |
+| `LoanResponse` | Respuesta simple de préstamo | id, user_id, device_id, loan_date, return_date, status |
+| `LoanDetailResponse` | Respuesta detallada con información relacionada | id, loan_date, return_date, status + información del usuario (`UserBasicInfo`) y dispositivo (`DeviceBasicInfo`) |
+| `UserBasicInfo` | Info básica de usuario (para respuestas anidadas) | id, name, email |
+| `DeviceBasicInfo` | Info básica de dispositivo (para respuestas anidadas) | id, name, serial_number, device_type, brand, is_available |
+
+![loan_schema.py](images/loan_schema_codigo1.png)
+![loan_schema.py](images/loan_schema_codigo2.png)
+
+**Propósito:** Definir la estructura de datos para el recurso `loans`.
+
+**Explicación:** Se creó `app/schemas/loan_schema.py` con schemas para creación (`LoanCreate`), actualización (`LoanUpdate`), respuesta simple (`LoanResponse`) y respuesta detallada (`LoanDetailResponse`) que incluye información anidada del usuario y dispositivo usando los schemas auxiliares `UserBasicInfo` y `DeviceBasicInfo`.
+
+## Fase 8 - Implementar CRUD de dispositivos
+
+Se implementaron los endpoints para gestionar dispositivos tecnológicos, incluyendo filtros avanzados para búsquedas personalizadas.
+
+### Servicio (`device_service.py`)
+
+Se creó `app/services/device_service.py` con las funciones CRUD y los filtros.
+
+![device_service.py](images/device_service_codigo.png)
+
+**Propósito:** Contener toda la lógica de base de datos para el recurso `devices`.
+
+**Explicación:** El servicio incluye funciones para crear, listar (con filtros), obtener por ID, actualizar completo, actualizar parcial y eliminar dispositivos. Los filtros permiten buscar por `device_type`, `is_available`, `brand` (búsqueda parcial) y `search` (que busca en `name` y `brand` usando `ilike`).
+
+### Rutas (`device_routes.py`)
+
+Se crearon los seis endpoints para el recurso `devices`.
+
+![device_routes.py](images/device_routes_codigo.png)
+
+**Propósito:** Exponer los endpoints HTTP para la gestión de dispositivos.
+
+**Explicación:** Cada endpoint utiliza las funciones del servicio y maneja errores como "dispositivo no encontrado" (404) y "número de serie duplicado" (400). Todas las respuestas incluyen las cabeceras personalizadas `X-App-Name` y `X-API-Version`.
+
+### Pruebas de los endpoints
+
+#### Creación de dispositivo exitosa (POST)
+![POST dispositivo exitoso](images/post_device_exitoso.png)
+
+**Propósito:** Verificar que se puede crear un dispositivo correctamente.
+
+**Explicación:** Se envía un JSON con `name`, `serial_number`, `device_type`, `brand` (opcional) e `is_available`. La API valida los datos, los guarda en SQLite y responde con código **201 Created**. Si el `serial_number` ya existe, devuelve **400 Bad Request**.
+
+#### Lista de dispositivos (GET)
+![GET dispositivos](images/get_devices_list.png)
+
+**Propósito:** Mostrar todos los dispositivos registrados.
+
+**Explicación:** `GET /devices` retorna todos los dispositivos con código **200 OK**. Cada dispositivo incluye `id`, `name`, `serial_number`, `device_type`, `brand`, `is_available` y `created_at`.
+
+#### Filtro por tipo de dispositivo
+![Filtro por tipo](images/get_devices_filter_type.png)
+
+**Propósito:** Verificar el filtro por `device_type`.
+
+**Explicación:** `GET /devices?device_type=laptop` retorna solo los dispositivos que coinciden con ese tipo.
+
+#### Filtro por disponibilidad
+![Filtro por disponibilidad](images/get_devices_filter_available.png)
+
+**Propósito:** Verificar el filtro por `is_available`.
+
+**Explicación:** `GET /devices?is_available=true` retorna solo los dispositivos disponibles para préstamo.
+
+#### Búsqueda por nombre o marca
+![Búsqueda search](images/get_devices_search.png)
+
+**Propósito:** Verificar la búsqueda con `search`.
+
+**Explicación:** `GET /devices?search=thinkpad` busca en `name` y `brand` usando `ilike` para encontrar coincidencias parciales (insensible a mayúsculas).
+
+## Actualización completa con PUT
+
+![PUT exitoso](images/put_device_exitoso.png)
+
+**Propósito:** Demostrar que PUT reemplaza completamente todos los campos de un dispositivo existente.
+
+**Explicación:** Se envía una petición PUT con un JSON que contiene todos los campos (`name`, `serial_number`, `device_type`, `brand`, `is_available`). La API actualiza el registro en la base de datos y devuelve el objeto modificado con código 200 OK. El `id` y `created_at` no cambian.
+
+## PUT con ID inexistente (404)
+
+![PUT con ID inexistente](images/put_device_404.png)
+
+**Propósito:** Verificar que PUT retorna 404 Not Found cuando se intenta actualizar un dispositivo que no existe.
+
+**Explicación:** Se envía `PUT /devices/999` con datos válidos. La API no encuentra el dispositivo y lanza `HTTPException(404)` con el mensaje `"Dispositivo no encontrado"`.
+
+## Actualización parcial con PATCH
+
+![PATCH exitoso](images/patch_device_exitoso.png)
+
+**Propósito:** Demostrar que PATCH modifica solo los campos enviados sin afectar los demás.
+
+**Explicación:** Se envía `PATCH /devices/1` con `{"is_available": false}`. La API actualiza solo el campo `is_available` en la base de datos y devuelve el dispositivo completo con el resto de los campos intactos. Código 200 OK.
+
+## PATCH vacío (400)
+
+![PATCH vacío](images/patch_device_vacio_400.png)
+
+**Propósito:** Verificar que PATCH rechaza una petición que no incluye ningún campo para actualizar.
+
+**Explicación:** Se envía `PATCH /devices/1` con un cuerpo vacío `{}`. La API detecta que no hay campos a modificar y responde con 400 Bad Request y el mensaje `"Debe proporcionar al menos un campo para actualizar"`.
+
+## PATCH con ID inexistente (404)
+
+![PATCH con ID inexistente](images/patch_device_404.png)
+
+**Propósito:** Validar que PATCH responde con 404 Not Found cuando el recurso no existe.
+
+**Explicación:** Se intenta actualizar parcialmente un dispositivo con ID 999, que no existe. La API lanza `HTTPException(404)` con el mensaje `"Dispositivo no encontrado"`.
+
+#### Eliminación de dispositivo (DELETE)
+![DELETE dispositivo](images/delete_device_exitoso.png)
+
+**Propósito:** Verificar que se puede eliminar un dispositivo.
+
+**Explicación:** `DELETE /devices/1` elimina el dispositivo y responde con **204 No Content**. Si el ID no existe, responde con **404 Not Found**.
+
+### Documentación Swagger actualizada
+
+Con los nuevos endpoints, Swagger UI ahora muestra el recurso `Dispositivos` completo con todos los schemas y códigos de respuesta.
+
+![Swagger con dispositivos](images/swagger_devices_crud.png)
+![Swagger con dispositivos](images/swagger_devices_crud2.png)
+
+## Fase 9 - Implementar gestión de préstamos
+
+Se implementaron los endpoints para gestionar préstamos de dispositivos a usuarios, incluyendo la lógica de disponibilidad y devolución.
+
+### Servicio (`loan_service.py`)
+
+Se creó `app/services/loan_service.py` con las funciones para crear préstamos, listarlos, obtener por ID y devolver.
+
+![loan_service.py](images/loan_service_codigo.png)
+
+**Propósito:** Contener toda la lógica de negocio para préstamos.
+
+**Explicación:** El servicio incluye validaciones de existencia de usuario y dispositivo, disponibilidad del dispositivo al crear, y actualización de disponibilidad tanto al prestar como al devolver. También impide devolver un préstamo ya devuelto.
+
+### Pruebas de los endpoints
+
+#### Creación de préstamo exitosa (POST)
+![POST préstamo exitoso](images/post_loan_exitoso.png)
+
+**Propósito:** Verificar que se puede crear un préstamo correctamente.
+
+**Explicación:** Se envía `user_id` y `device_id`. La API valida que el usuario y el dispositivo existan, y que el dispositivo esté disponible. Luego crea el préstamo con `status="active"` y `loan_date` automática, y cambia `is_available` del dispositivo a `False`. Responde con `201 Created`.
+
+#### Error: Dispositivo no disponible (409)
+![POST préstamo dispositivo no disponible](images/post_loan_device_not_available.png)
+
+**Propósito:** Validar que no se puede prestar un dispositivo ya prestado.
+
+**Explicación:** Se intenta crear otro préstamo con el mismo dispositivo. La API detecta que `is_available` es `False` y responde con `409 Conflict`.
+
+#### Error: Usuario inexistente (404)
+![POST préstamo usuario inexistente](images/post_loan_user_not_found.png)
+
+**Propósito:** Verificar que se valida la existencia del usuario.
+
+**Explicación:** Se envía un `user_id` que no existe. La API retorna `404 Not Found`.
+
+#### Devolución exitosa (PATCH /return)
+![PATCH devolución exitosa](images/patch_loan_return_exitoso.png)
+
+**Propósito:** Verificar que se puede devolver un dispositivo.
+
+**Explicación:** Se envía `PATCH /loans/1/return`. La API marca el préstamo como `"returned"`, asigna `return_date` automática y cambia `is_available` del dispositivo a `True`. Responde con `200 OK`.
+
+#### Error: Préstamo ya devuelto (409)
+![PATCH devolución duplicada](images/patch_loan_return_409.png)
+
+**Propósito:** Validar que no se puede devolver un préstamo ya devuelto.
+
+**Explicación:** Se intenta devolver el mismo préstamo nuevamente. La API responde con `409 Conflict`.
+
+#### Estado del dispositivo después del préstamo
+![Dispositivo no disponible](images/device_after_loan.png)
+
+**Propósito:** Confirmar que el dispositivo queda como no disponible.
+
+**Explicación:** `GET /devices/1` después del POST muestra `"is_available": false`.
+
+#### Estado del dispositivo después de la devolución
+![Dispositivo disponible](images/device_after_return.png)
+
+**Propósito:** Confirmar que el dispositivo vuelve a estar disponible.
+
+**Explicación:** `GET /devices/1` después del PATCH de devolución muestra `"is_available": true`.
