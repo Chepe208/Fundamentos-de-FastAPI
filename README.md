@@ -1252,3 +1252,118 @@ Se crearon los schemas Pydantic para los nuevos recursos `devices` y `loans`. Es
 **Propósito:** Definir la estructura de datos para el recurso `loans`.
 
 **Explicación:** Se creó `app/schemas/loan_schema.py` con schemas para creación (`LoanCreate`), actualización (`LoanUpdate`), respuesta simple (`LoanResponse`) y respuesta detallada (`LoanDetailResponse`) que incluye información anidada del usuario y dispositivo usando los schemas auxiliares `UserBasicInfo` y `DeviceBasicInfo`.
+
+## Fase 8 - Implementar CRUD de dispositivos
+
+Se implementaron los endpoints para gestionar dispositivos tecnológicos, incluyendo filtros avanzados para búsquedas personalizadas.
+
+### Servicio (`device_service.py`)
+
+Se creó `app/services/device_service.py` con las funciones CRUD y los filtros.
+
+![device_service.py](images/device_service_codigo.png)
+
+**Propósito:** Contener toda la lógica de base de datos para el recurso `devices`.
+
+**Explicación:** El servicio incluye funciones para crear, listar (con filtros), obtener por ID, actualizar completo, actualizar parcial y eliminar dispositivos. Los filtros permiten buscar por `device_type`, `is_available`, `brand` (búsqueda parcial) y `search` (que busca en `name` y `brand` usando `ilike`).
+
+### Rutas (`device_routes.py`)
+
+Se crearon los seis endpoints para el recurso `devices`.
+
+![device_routes.py](images/device_routes_codigo.png)
+
+**Propósito:** Exponer los endpoints HTTP para la gestión de dispositivos.
+
+**Explicación:** Cada endpoint utiliza las funciones del servicio y maneja errores como "dispositivo no encontrado" (404) y "número de serie duplicado" (400). Todas las respuestas incluyen las cabeceras personalizadas `X-App-Name` y `X-API-Version`.
+
+### Pruebas de los endpoints
+
+#### Creación de dispositivo exitosa (POST)
+![POST dispositivo exitoso](images/post_device_exitoso.png)
+
+**Propósito:** Verificar que se puede crear un dispositivo correctamente.
+
+**Explicación:** Se envía un JSON con `name`, `serial_number`, `device_type`, `brand` (opcional) e `is_available`. La API valida los datos, los guarda en SQLite y responde con código **201 Created**. Si el `serial_number` ya existe, devuelve **400 Bad Request**.
+
+#### Lista de dispositivos (GET)
+![GET dispositivos](images/get_devices_list.png)
+
+**Propósito:** Mostrar todos los dispositivos registrados.
+
+**Explicación:** `GET /devices` retorna todos los dispositivos con código **200 OK**. Cada dispositivo incluye `id`, `name`, `serial_number`, `device_type`, `brand`, `is_available` y `created_at`.
+
+#### Filtro por tipo de dispositivo
+![Filtro por tipo](images/get_devices_filter_type.png)
+
+**Propósito:** Verificar el filtro por `device_type`.
+
+**Explicación:** `GET /devices?device_type=laptop` retorna solo los dispositivos que coinciden con ese tipo.
+
+#### Filtro por disponibilidad
+![Filtro por disponibilidad](images/get_devices_filter_available.png)
+
+**Propósito:** Verificar el filtro por `is_available`.
+
+**Explicación:** `GET /devices?is_available=true` retorna solo los dispositivos disponibles para préstamo.
+
+#### Búsqueda por nombre o marca
+![Búsqueda search](images/get_devices_search.png)
+
+**Propósito:** Verificar la búsqueda con `search`.
+
+**Explicación:** `GET /devices?search=thinkpad` busca en `name` y `brand` usando `ilike` para encontrar coincidencias parciales (insensible a mayúsculas).
+
+## Actualización completa con PUT
+
+![PUT exitoso](images/put_device_exitoso.png)
+
+**Propósito:** Demostrar que PUT reemplaza completamente todos los campos de un dispositivo existente.
+
+**Explicación:** Se envía una petición PUT con un JSON que contiene todos los campos (`name`, `serial_number`, `device_type`, `brand`, `is_available`). La API actualiza el registro en la base de datos y devuelve el objeto modificado con código 200 OK. El `id` y `created_at` no cambian.
+
+## PUT con ID inexistente (404)
+
+![PUT con ID inexistente](images/put_device_404.png)
+
+**Propósito:** Verificar que PUT retorna 404 Not Found cuando se intenta actualizar un dispositivo que no existe.
+
+**Explicación:** Se envía `PUT /devices/999` con datos válidos. La API no encuentra el dispositivo y lanza `HTTPException(404)` con el mensaje `"Dispositivo no encontrado"`.
+
+## Actualización parcial con PATCH
+
+![PATCH exitoso](images/patch_device_exitoso.png)
+
+**Propósito:** Demostrar que PATCH modifica solo los campos enviados sin afectar los demás.
+
+**Explicación:** Se envía `PATCH /devices/1` con `{"is_available": false}`. La API actualiza solo el campo `is_available` en la base de datos y devuelve el dispositivo completo con el resto de los campos intactos. Código 200 OK.
+
+## PATCH vacío (400)
+
+![PATCH vacío](images/patch_device_vacio_400.png)
+
+**Propósito:** Verificar que PATCH rechaza una petición que no incluye ningún campo para actualizar.
+
+**Explicación:** Se envía `PATCH /devices/1` con un cuerpo vacío `{}`. La API detecta que no hay campos a modificar y responde con 400 Bad Request y el mensaje `"Debe proporcionar al menos un campo para actualizar"`.
+
+## PATCH con ID inexistente (404)
+
+![PATCH con ID inexistente](images/patch_device_404.png)
+
+**Propósito:** Validar que PATCH responde con 404 Not Found cuando el recurso no existe.
+
+**Explicación:** Se intenta actualizar parcialmente un dispositivo con ID 999, que no existe. La API lanza `HTTPException(404)` con el mensaje `"Dispositivo no encontrado"`.
+
+#### Eliminación de dispositivo (DELETE)
+![DELETE dispositivo](images/delete_device_exitoso.png)
+
+**Propósito:** Verificar que se puede eliminar un dispositivo.
+
+**Explicación:** `DELETE /devices/1` elimina el dispositivo y responde con **204 No Content**. Si el ID no existe, responde con **404 Not Found**.
+
+### Documentación Swagger actualizada
+
+Con los nuevos endpoints, Swagger UI ahora muestra el recurso `Dispositivos` completo con todos los schemas y códigos de respuesta.
+
+![Swagger con dispositivos](images/swagger_devices_crud.png)
+![Swagger con dispositivos](images/swagger_devices_crud2.png)

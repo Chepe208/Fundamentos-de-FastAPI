@@ -15,6 +15,13 @@ class DeviceCreate(DeviceBase):
 class DeviceUpdate(DeviceBase):
     pass
 
+class DevicePatch(BaseModel):  # <--- NUEVO SCHEMA PARA PATCH
+    name: Optional[str] = Field(None, min_length=3, max_length=100)
+    serial_number: Optional[str] = Field(None, min_length=3, max_length=50)
+    device_type: Optional[str] = Field(None)
+    brand: Optional[str] = Field(None, max_length=50)
+    is_available: Optional[bool] = Field(None)
+
 class DeviceResponse(DeviceBase):
     id: int
     created_at: datetime
