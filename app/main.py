@@ -3,8 +3,10 @@ from app.routes.user_routes import router
 from app.database.connection import engine, Base
 
 from app.models.user_model import User 
+from app.models.device_model import Device 
+from app.models.loan_model import Loan
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="device_systems API",

@@ -865,3 +865,228 @@ Se instaló Alembic y se configuró para gestionar migraciones de la base de dat
 **Propósito:** Confirmar que las tablas `devices` y `loans` se crearon correctamente.
 
 **Explicación:** Se abrió la base de datos `device_systems.db` con DB Browser for SQLite y se verificó la existencia de las nuevas tablas `devices` y `loans`. Ambas tienen la estructura definida en los modelos (columnas, claves primarias, restricciones).
+
+# Fase 4 - Crear el modelo Device
+
+## Objetivo
+
+Crear el modelo `Device` en `app/models/device_model.py` con todos los campos requeridos y sus restricciones. Este modelo representará los dispositivos tecnológicos disponibles para préstamo.
+
+---
+
+## 1. Código del modelo Device
+
+### Propósito
+
+Definir la estructura de la tabla `devices` en la base de datos usando SQLAlchemy.
+
+### Explicación
+
+Se creó el archivo `app/models/device_model.py` con la clase `Device` que hereda de `Base`. Cada columna se define con su tipo, restricciones y valores por defecto. El campo `serial_number` se configura con `unique=True` para evitar duplicados, `is_available` tiene `default=True` para que los dispositivos estén disponibles por defecto, y `created_at` se asigna automáticamente con la fecha y hora actual mediante `func.now()`.
+
+![Código del modelo Device](images/modelo_device_codigo.png)
+
+---
+
+## 2. Importación del modelo en main.py
+
+### Propósito
+
+Registrar el modelo `Device` para que SQLAlchemy y Alembic lo reconozcan.
+
+### Explicación
+
+Se importó `Device` en `app/main.py` junto con los demás modelos, como `User`. Esto permite que Alembic detecte automáticamente los cambios realizados en `device_model.py` y genere migraciones que incluyan este nuevo modelo.
+
+
+![Importación del modelo Device en main.py](images/main_import_device.png)
+
+---
+
+## 3. Tabla devices generada en la base de datos
+
+### Propósito
+
+Confirmar que la tabla `devices` fue creada correctamente por Alembic.
+
+### Explicación
+
+Se abrió la base de datos `device_systems.db` utilizando DB Browser for SQLite y se verificó que la tabla `devices` existe con todas sus columnas:
+
+- `id` (clave primaria)
+- `name` (obligatorio)
+- `serial_number` (único)
+- `device_type` (obligatorio)
+- `brand` (opcional)
+- `is_available` (booleano con valor predeterminado `True`)
+- `created_at` (fecha de creación automática)
+
+También se confirmó que el campo `serial_number` posee la restricción `UNIQUE`, garantizando que no existan números de serie duplicados.
+
+![Tabla devices generada](images/tabla_device_generada.png)
+
+---
+
+# Fase 5 - Crear el modelo Loan
+
+## objetivo
+
+Crear el archivo `app/models/loan_model.py`. El modelo `Loan` debe representar el préstamo de un dispositivo a un usuario.
+
+---
+
+## 1. Código del modelo Loan
+
+### Propósito
+
+Definir la estructura de la tabla `loans` en la base de datos.
+
+### Explicación
+
+Se creó el archivo `app/models/loan_model.py` con la clase `Loan` que hereda de `Base`. El modelo incluye columnas para `user_id` y `device_id` como `ForeignKey` hacia las tablas `users` y `devices`, respectivamente.
+
+También incluye:
+
+- `loan_date`: fecha de préstamo generada automáticamente.
+- `return_date`: fecha de devolución opcional.
+- `status`: estado del préstamo, con valor predeterminado `active`.
+
+Además, se definieron las relaciones bidireccionales utilizando `relationship()` para permitir la navegación entre usuarios, dispositivos y préstamos.
+
+### Evidencia
+
+![Código del modelo Loan](images/modelo_loan_codigo.png)
+
+---
+
+## 2. Relaciones en los modelos User y Device
+
+### Relación User → Loan
+
+### Propósito
+
+Establecer la relación **One-to-Many** entre `User` y `Loan`.
+
+### Explicación
+
+En `app/models/user_model.py` se agregó la siguiente relación:
+
+```python
+loans = relationship("Loan", back_populates="user")
+```
+
+Esto permite que desde un objeto `User` se pueda acceder a todos sus préstamos mediante `user.loans`, y desde un objeto `Loan` se pueda acceder a su usuario asociado mediante `loan.user`.
+
+![Relación User y Loan](images/user_model_relacion.png)
+
+---
+
+### Relación Device → Loan
+
+### Propósito
+
+Establecer la relación **One-to-Many** entre `Device` y `Loan`.
+
+### Explicación
+
+En `app/models/device_model.py` se agregó la siguiente relación:
+
+```python
+loans = relationship("Loan", back_populates="device")
+```
+
+Esto permite que desde un objeto `Device` se pueda acceder al historial de préstamos mediante `device.loans`, y desde un objeto `Loan` se pueda acceder al dispositivo asociado mediante `loan.device`.
+
+![Relación Device y Loan](images/device_model_relacion.png)
+
+---
+
+## 3. Importación de todos los modelos en main.py
+
+### Propósito
+
+Registrar todos los modelos para que Alembic los detecte y SQLAlchemy los reconozca.
+
+### Explicación
+
+En `app/main.py` se importaron los tres modelos:
+
+- `User`
+- `Device`
+- `Loan`
+
+Esto garantiza que Alembic tenga conocimiento de todas las entidades y sus relaciones al momento de generar migraciones.
+
+
+![Importación de todos los modelos](images/main_import_all_models.png)
+
+---
+
+## 4. Generación y aplicación de migraciones
+
+### Generación de la migración
+
+#### Propósito
+
+Crear una migración que refleje los cambios realizados en los modelos y sus relaciones.
+
+#### Explicación
+
+Se ejecutó el siguiente comando:
+
+```bash
+python -m alembic revision --autogenerate -m "add relationships to loans and update models"
+```
+
+Alembic detectó automáticamente las nuevas relaciones y generó el script de migración correspondiente.
+
+#### Evidencia
+
+![Generación de migración](images/alembic_revision_loan.png)
+
+---
+
+### Aplicación de la migración
+
+#### Propósito
+
+Actualizar la base de datos con las nuevas relaciones y claves foráneas.
+
+#### Explicación
+
+Se ejecutó el siguiente comando:
+
+```bash
+python -m alembic upgrade head
+```
+
+Alembic aplicó la migración y actualizó la base de datos para incluir las relaciones entre las tablas `users`, `devices` y `loans`.
+
+![Aplicación de migración](images/alembic_upgrade_loan.png)
+
+---
+
+## 5. Verificación de la tabla loans
+
+### Propósito
+
+Confirmar que la tabla `loans` fue creada correctamente con todas sus columnas y restricciones.
+
+### Explicación
+
+Se abrió la base de datos `device_systems.db` mediante DB Browser for SQLite y se verificó que la tabla `loans` contiene las siguientes columnas:
+
+| Campo | Descripción |
+|---------|---------|
+| `id` | Clave primaria |
+| `user_id` | Foreign Key hacia `users.id` |
+| `device_id` | Foreign Key hacia `devices.id` |
+| `loan_date` | Fecha automática de préstamo |
+| `return_date` | Fecha de devolución opcional |
+| `status` | Estado actual del préstamo |
+
+También se confirmó que las claves foráneas (`Foreign Keys`) fueron creadas correctamente y mantienen la integridad referencial entre las tablas.
+
+![Tabla loans generada](images/tabla_loan_generada.png)
+
+---
