@@ -775,3 +775,93 @@ Migrar la API de una lista en memoria a una base de datos real con SQLAlchemy fu
 ### Link Video Youtube Evidencia 9
 
 https://youtu.be/5dIhqDU1FQ0
+
+# Proyecto-Final-v1 GA1-220501096-01-AA1-EV10 – FastAPI Avanzado: Migraciones con Alembic, Asociaciones de Modelos y Consultas con Joins en device_systems
+
+## Fase 1 - Retomar el proyecto anterior
+
+Se ha creado la rama `device_systems_alembic_relaciones` para desarrollar las nuevas funcionalidades sin afectar la rama `main` (versión estable anterior). El proyecto base (`users`, CRUD, SQLAlchemy) funciona correctamente y se procederá a agregar los modelos `Device` y `Loan`, sus relaciones, migraciones con Alembic y consultas avanzadas.
+
+![Swagger UI Base](images/inicio_ev10_swagger.png)
+
+**Explicación:** La API de usuarios sigue operativa antes de agregar los nuevos modelos. Esto confirma que la base de la EV09 está estable y lista para evolucionar.
+
+##  Fase 2 - Actualizar la estructura del proyecto
+Se han agregado los archivos base para los nuevos recursos `devices` y `loans`:
+
+- **Modelos**: `device_model.py`, `loan_model.py` (en `app/models/`)
+- **Schemas**: `device_schema.py`, `loan_schema.py` (en `app/schemas/`)
+- **Rutas**: `device_routes.py`, `loan_routes.py` (en `app/routes/`)
+- **Servicios**: `device_service.py`, `loan_service.py` (en `app/services/`)
+
+![Estructura del proyecto con nuevos archivos](images/estructura_ev10_fase2.png)
+
+**Explicación:** La estructura ahora incluye los nuevos archivos para los modelos, schemas, rutas y servicios. El proyecto sigue funcionando sin errores, ya que los nuevos archivos no afectan la funcionalidad existente de `users`.
+
+## Fase 3 - Instalación y configuración de Alembic
+
+Se instaló Alembic y se configuró para gestionar migraciones de la base de datos.
+
+### Instalación
+
+![Instalación Alembic](images/instalacion_alembic.png)
+
+**Propósito:** Incorporar Alembic al proyecto para versionar cambios estructurales de la base de datos.
+
+**Explicación:** Se ejecutó `pip install alembic`. Alembic permite generar y aplicar migraciones de forma controlada, facilitando la evolución del esquema de la base de datos sin perder datos.
+
+### Inicialización de Alembic
+
+![alembic init](images/alembic_init.png)
+
+**Propósito:** Crear la estructura de carpetas y archivos necesarios para las migraciones.
+
+**Explicación:** Se ejecutó `alembic init alembic` desde la raíz del proyecto. Esto generó la carpeta `alembic/` y el archivo `alembic.ini` con la configuración base.
+
+### Configuración de la conexión
+
+![Configuración alembic.ini](images/alembic_ini_config.png)
+
+**Propósito:** Asegurar que Alembic se conecte a la base de datos correcta.
+
+**Explicación:** En `alembic.ini` se modificó la línea `sqlalchemy.url = sqlite:///./device_systems.db` para que coincida con la URL de nuestra base de datos SQLite.
+
+### Configuración de modelos
+
+![Configuración env.py](images/alembic_env_config.png)
+
+**Propósito:** Hacer que Alembic reconozca los modelos SQLAlchemy del proyecto.
+
+**Explicación:** En `alembic/env.py` se importó la `Base` desde `app.database.connection` y los modelos `User`, `Device` y `Loan`. Luego se asignó `target_metadata = Base.metadata` para que Alembic detecte automáticamente los cambios en los modelos.
+
+### Generación de migración inicial
+
+![alembic revision --autogenerate](images/alembic_revision.png)
+
+**Propósito:** Crear una migración que refleje el estado actual de los modelos.
+
+**Explicación:** Se ejecutó `alembic revision --autogenerate -m "create devices and loans tables"`. Alembic comparó el estado actual de la base de datos con los modelos y generó automáticamente el script de migración para crear las tablas `devices` y `loans`.
+
+### Aplicación de la migración
+
+![alembic upgrade head](images/alembic_upgrade.png)
+
+**Propósito:** Aplicar la migración a la base de datos y crear las nuevas tablas.
+
+**Explicación:** Se ejecutó `alembic upgrade head`. Alembic aplicó todas las migraciones pendientes y creó las tablas `devices` y `loans` en la base de datos.
+
+### Historial de migraciones
+
+![alembic history](images/alembic_history.png)
+
+**Propósito:** Ver el historial de migraciones aplicadas.
+
+**Explicación:** `alembic history` muestra todas las revisiones de migración existentes. En este caso aparece la migración recién creada para `devices` y `loans`.
+
+### Verificación de las tablas generadas
+
+![Tablas devices y loans en la base de datos](images/tablas_devices_loans.png)
+
+**Propósito:** Confirmar que las tablas `devices` y `loans` se crearon correctamente.
+
+**Explicación:** Se abrió la base de datos `device_systems.db` con DB Browser for SQLite y se verificó la existencia de las nuevas tablas `devices` y `loans`. Ambas tienen la estructura definida en los modelos (columnas, claves primarias, restricciones).
