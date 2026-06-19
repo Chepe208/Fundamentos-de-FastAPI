@@ -1432,3 +1432,96 @@ Se creó `app/services/loan_service.py` con las funciones para crear préstamos,
 **Propósito:** Confirmar que el dispositivo vuelve a estar disponible.
 
 **Explicación:** `GET /devices/1` después del PATCH de devolución muestra `"is_available": true`.
+
+## Fase 10 - Implementar consultas con joins y filtros
+
+Se implementaron consultas que combinan información de las tablas `loans`, `users` y `devices` usando `join()`, `where()`, `ilike()` y filtros opcionales.
+
+## 1. Todos los préstamos con información relacionada (GET /loans/details)
+
+![Todos los préstamos con información relacionada](images/loans_details_all.png)
+
+**Propósito:** Mostrar la información completa de cada préstamo, incluyendo datos anidados del usuario y del dispositivo.
+
+**Explicación:** Se ejecuta GET /loans/details sin filtros. La respuesta incluye cada préstamo con id, fechas, estado, y los objetos anidados user y device. Esta consulta utiliza join() para combinar las tres tablas en una sola operación.
+
+## 2. Filtro por estado activo (GET /loans/details?status=active)
+
+![Filtro por estado activo](images/loans_details_status_active.png)
+
+**Propósito:** Verificar el filtro por status usando where().
+
+**Explicación:** Se envía GET /loans/details?status=active. La API aplica where(Loan.status == "active") y retorna solo los préstamos activos, manteniendo la información anidada de usuario y dispositivo.
+
+## 3. Búsqueda por email de usuario (GET /loans/details?user_email=ana)
+
+![Búsqueda por email de usuario](images/loans_details_email.png)
+
+**Propósito:** Demostrar el uso de ilike() para búsqueda parcial de email (insensible a mayúsculas).
+
+**Explicación:** Se envía GET /loans/details?user_email=ana. La consulta aplica User.email.ilike(f"%{user_email}%") para encontrar todos los usuarios cuyo email contenga "ana" (coincidencia parcial). Los préstamos de esos usuarios se retornan con la misma estructura anidada.
+
+## 4. Filtro por tipo de dispositivo (GET /loans/details?device_type=laptop)
+
+![Filtro por tipo de dispositivo](images/loans_details_device_type.png)
+
+**Propósito:** Verificar el filtro por tipo de dispositivo usando where().
+
+**Explicación:** Se envía GET /loans/details?device_type=laptop. La API aplica where(Device.device_type == "laptop") y retorna solo los préstamos asociados a dispositivos de ese tipo.
+
+## 5. Préstamos de un usuario específico (GET /users/1/loans)
+
+![Préstamos de un usuario específico](images/loans_por_user.png)
+
+**Propósito:** Mostrar todos los préstamos de un usuario por su ID.
+
+**Explicación:** Se envía GET /loans/user/1/loans. La API valida que el usuario exista (si no, devuelve 404 Not Found) y retorna la lista de préstamos asociados a ese usuario.
+
+## 6. Historial de préstamos de un dispositivo (GET /devices/1/loans)
+
+![Historial de préstamos de un dispositivo](images/loans_by_device.png)
+
+**Propósito:** Mostrar el historial completo de préstamos de un dispositivo.
+
+**Explicación:** Se envía GET /loans/device/1/loans. La API valida que el dispositivo exista (si no, devuelve 404 Not Found) y retorna todos los préstamos asociados a ese dispositivo, mostrando su historial de uso.
+
+## Fase 11 - Manejo de errores
+
+La API maneja los siguientes errores con códigos HTTP apropiados:
+
+| Situación | Código | Mensaje ejemplo |
+|-----------|--------|-----------------|
+| Registro creado exitosamente | 201 Created | (no hay error) |
+| Consulta o actualización exitosa | 200 OK | (no hay error) |
+| Eliminación exitosa | 204 No Content | (sin cuerpo) |
+| Recurso no encontrado | 404 Not Found | "Usuario no encontrado", "Dispositivo no encontrado", "Préstamo no encontrado" |
+| Dato duplicado | 400 Bad Request | "El número de serie ya está registrado" |
+| Regla de negocio incumplida | 409 Conflict | "El dispositivo no está disponible para préstamo", "El préstamo ya fue devuelto anteriormente" |
+| Error de validación | 422 Unprocessable Entity | Detalle automático de Pydantic |
+
+### Códigos de estado implementados en todos los endpoints
+
+| Recurso | Endpoint | Códigos posibles |
+|---------|----------|------------------|
+| Users | GET /users, GET /users/{id}, PUT, PATCH, DELETE | 200, 201, 204, 400, 404, 422 |
+| Devices | GET /devices, GET /devices/{id}, POST, PUT, PATCH, DELETE | 200, 201, 204, 400, 404, 422 |
+| Loans | POST /loans, GET /loans/details, GET /loans/{id}, PATCH /return, GET /user/{id}/loans, GET /device/{id}/loans | 200, 201, 404, 409, 422 |
+
+### Swagger UI mejorada – Documentación con descripciones y tags
+
+![Swagger UI mejorada](images/swagger_mejorado.png)
+
+**Propósito:** Mostrar la documentación interactiva actualizada con descripciones en los endpoints, organización por tags y códigos de respuesta esperados.
+
+**Explicación:** En `http://localhost:8000/docs` ahora se pueden ver todos los endpoints agrupados por tags (`Usuarios`, `Dispositivos`, `Préstamos`). Los endpoints de `Préstamos` tienen:
+- **summary:** Título corto y claro.
+- **description:** Explicación detallada de lo que hace el endpoint, las validaciones y las reglas de negocio.
+- **response_description:** Descripción del código 200, 201, 404, 409.
+
+## Reflexión final sobre la importancia de la seguridad en APIs REST.
+
+Aunque en este proyecto nos enfocamos en la lógica de préstamos y relaciones, la seguridad siempre debe estar presente: validar que el usuario existe, que el dispositivo está disponible, que un préstamo no se devuelva dos veces, o que el número de serie sea único, son reglas que protegen la integridad de los datos. También el uso de cabeceras personalizadas (`X-App-Name`, `X-API-Version`) ayuda a identificar el origen de las peticiones, y los códigos de estado HTTP claros (`404`, `409`, `422`) evitan que el cliente malinterprete los errores. En el futuro, podríamos añadir autenticación con JWT, cifrado de contraseñas, y limitación de tasa rate limiting para hacer la API aún más robusta. Pero lo fundamental ya está: una API bien diseñada, con validaciones en cada capa, es el primer paso hacia un sistema seguro y confiable.
+
+### Link Video Youtube Evidencia 10
+
+https://youtu.be/Zey7gZVWTq0

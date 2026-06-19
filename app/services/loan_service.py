@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_, and_
 from datetime import datetime
 from app.models.loan_model import Loan
 from app.models.user_model import User
@@ -58,3 +59,41 @@ def return_loan(db: Session, loan_id: int) -> Loan | None:
     db.commit()
     db.refresh(loan)
     return loan
+
+def get_loans_with_details(
+    db: Session,
+    status: Optional[str] = None,
+    user_email: Optional[str] = None,
+    device_type: Optional[str] = None
+):
+    query = db.query(
+        Loan.id,
+        Loan.loan_date,
+        Loan.return_date,
+        Loan.status,
+        User.id.label("user_id"),
+        User.name.label("user_name"),
+        User.email.label("user_email"),
+        Device.id.label("device_id"),
+        Device.name.label("device_name"),
+        Device.serial_number.label("device_serial"),
+        Device.device_type.label("device_type"),
+        Device.brand.label("device_brand"),
+        Device.is_available.label("device_available")
+    ).join(User, Loan.user_id == User.id)\
+     .join(Device, Loan.device_id == Device.id)
+
+    if status:
+        query = query.where(Loan.status == status)
+    if user_email:
+        query = query.where(User.email.ilike(f"%{user_email}%"))
+    if device_type:
+        query = query.where(Device.device_type == device_type)
+
+    return query.all()
+
+def get_loans_by_user(db: Session, user_id: int):
+    return db.query(Loan).filter(Loan.user_id == user_id).all()
+
+def get_loans_by_device(db: Session, device_id: int):
+    return db.query(Loan).filter(Loan.device_id == device_id).all()
