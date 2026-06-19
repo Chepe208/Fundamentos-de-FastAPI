@@ -13,7 +13,8 @@ from app.models.loan_model import Loan
 app = FastAPI(
     title="device_systems API",
     description="API REST para gestión de usuarios, dispositivos y préstamos",
-    version="2.0.0"
+    version="2.0.0",
+    contact={"name": "Jose Manuel Ruiz Zapata", "email": "jruizzapata38@gmail.com"},
 )
 
 app.include_router(user_router)
