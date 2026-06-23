@@ -1551,3 +1551,41 @@ La estructura ahora queda preparada para implementar autenticación OAuth2 con J
 **Propósito:** Organizar el proyecto para los nuevos módulos de seguridad.
 
 **Explicación:** Se crearon las carpetas y archivos necesarios para la autenticación y middleware. Esto mantiene la separación de responsabilidades y facilita el mantenimiento. Los archivos están vacíos por ahora y se llenarán en fases posteriores.
+
+## Fase 3 - Actualizar dependencias
+
+Se instalaron las dependencias necesarias para implementar autenticación, hash de contraseñas, rate limiting y manejo de variables de entorno.
+
+### Paquetes instalados
+
+| Paquete | Propósito |
+|---------|-----------|
+| `python-jose[cryptography]` | Generación y validación de tokens JWT |
+| `passlib[bcrypt]` | Hash seguro de contraseñas con bcrypt |
+| `slowapi` | Rate limiting para limitar peticiones abusivas |
+| `python-multipart` | Soporte para formularios en login |
+| `python-dotenv` | Carga de variables de entorno desde `.env` |
+
+### Instalación
+
+```bash
+pip install python-jose[cryptography] passlib[bcrypt] slowapi python-multipart python-dotenv
+```
+
+![Instalación dependencias seguridad](images/instalacion_dependencias_seguridad.png)
+
+**Propósito:** Añadir las librerías necesarias para la capa de seguridad.
+
+**Explicación:** Se ejecutó `pip install` con todas las dependencias y se actualizó `requirements.txt`. Todas se instalaron correctamente, como se muestra en la terminal.
+
+## Actualización de requirements.txt
+
+Después de instalar los paquetes, se actualizó `requirements.txt` con todas las dependencias:
+
+```bash
+pip freeze > requirements.txt
+```
+
+![Actualización de requirements.txt](images/requirements_seguridad.png)
+
+**Propósito:** Asegurar que el entorno de desarrollo pueda replicarse en otros equipos, incluyendo las nuevas librerías de seguridad.
