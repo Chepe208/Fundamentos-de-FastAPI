@@ -1589,3 +1589,37 @@ pip freeze > requirements.txt
 ![Actualización de requirements.txt](images/requirements_seguridad.png)
 
 **Propósito:** Asegurar que el entorno de desarrollo pueda replicarse en otros equipos, incluyendo las nuevas librerías de seguridad.
+
+## Fase 4 - Mejorar el modelo User
+
+Se actualizó el modelo `User` para soportar autenticación, agregando los campos:
+
+- `hashed_password`: almacena la contraseña encriptada (nunca se expone en respuestas).
+- `role`: define el rol del usuario (`admin`, `support`, `user`), por defecto `"user"`.
+- `is_active`: indica si el usuario está activo, por defecto `True`.
+
+![Modelo User actualizado](images/user_model_autenticacion.png)
+
+**Propósito:** Preparar el modelo para almacenar credenciales de forma segura y manejar roles.
+
+**Explicación:** Se añadieron los campos necesarios para la autenticación y autorización. Luego se generó y aplicó una migración con Alembic para reflejar estos cambios en la base de datos.
+
+### Generación y aplicación de la migración
+
+```bash
+python -m alembic revision --autogenerate -m "add authentication fields to users"
+python -m alembic upgrade head
+```
+
+![Generación de migración](images/alembic_revision_auth.png)
+
+![Aplicación de migración](images/alembic_upgrade_auth.png)
+
+
+## Verificación de la tabla actualizada
+
+![Tabla users actualizada](images/tabla_users_auth.png)
+
+**Propósito:** Confirmar que la migración se aplicó correctamente.
+
+**Explicación:** Se abrió la base de datos con DB Browser for SQLite y se verificó que la tabla `users` ahora contiene las columnas `hashed_password`, `role` e `is_active`, todas con las restricciones definidas.
