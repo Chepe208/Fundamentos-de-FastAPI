@@ -1525,3 +1525,29 @@ Aunque en este proyecto nos enfocamos en la lógica de préstamos y relaciones, 
 ### Link Video Youtube Evidencia 10
 
 https://youtu.be/Zey7gZVWTq0
+
+## Fase 1 - Retomar el proyecto anterior
+
+Se ha creado la rama `device_systems_security` desde `device_systems_alembic_relaciones` que es la que el trabajo completo de la EV10. Esto asegura que todo el código de modelos, relaciones, joins y migraciones sigue para agregar la capa de seguridad.
+
+El proyecto base funciona correctamente con los recursos `users`, `devices` y `loans`, y sus endpoints CRUD y consultas con joins.
+
+A partir de esta base, se agregará autenticación con JWT, hash de contraseñas, protección de rutas, middleware personalizado, CORS y rate limiting.
+
+## Fase 2 - Actualizar la estructura del proyecto
+
+Se ha actualizado la estructura del proyecto para incluir los nuevos componentes de seguridad:
+
+- **`auth/`** : Contendrá la lógica de autenticación.
+- **`middlewares/`** : Para middleware personalizado.
+- **`dependencies/auth_dependency.py`** : Dependencias para proteger rutas como get_current_user, require_admin, etc.
+- **`schemas/auth_schema.py`** : Schemas Pydantic para registro, login y tokens.
+- **`.env` y `.env.example`** : Para variables de entorno.
+
+La estructura ahora queda preparada para implementar autenticación OAuth2 con JWT, hash de contraseñas, middleware de trazabilidad y rate limiting.
+
+![Estructura del proyecto EV11](images/estructura_ev11_fase2.png)
+
+**Propósito:** Organizar el proyecto para los nuevos módulos de seguridad.
+
+**Explicación:** Se crearon las carpetas y archivos necesarios para la autenticación y middleware. Esto mantiene la separación de responsabilidades y facilita el mantenimiento. Los archivos están vacíos por ahora y se llenarán en fases posteriores.
