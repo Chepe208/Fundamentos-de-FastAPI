@@ -1623,3 +1623,32 @@ python -m alembic upgrade head
 **Propósito:** Confirmar que la migración se aplicó correctamente.
 
 **Explicación:** Se abrió la base de datos con DB Browser for SQLite y se verificó que la tabla `users` ahora contiene las columnas `hashed_password`, `role` e `is_active`, todas con las restricciones definidas.
+
+## Fase 5 - Aplicar hash de contraseñas con passlib
+
+Se creó `app/auth/security.py` para manejar la seguridad de las contraseñas y la autenticación con tokens JWT.
+
+### Funciones implementadas
+
+| Función | Descripción |
+|---------|-------------|
+| `get_password_hash(password)` | Hashea una contraseña usando bcrypt. |
+| `verify_password(plain, hashed)` | Verifica si la contraseña coincide con su hash. |
+| `create_access_token(data)` | Genera un token JWT con los datos del usuario y expiración. |
+| `decode_access_token(token)` | Decodifica y valida un token JWT. |
+
+### Código de seguridad
+
+![security.py](images/security_py_codigo.png)
+
+**Propósito:** Centralizar la lógica de hash y JWT en un solo archivo reutilizable.
+
+**Explicación:** Las funciones de hash garantizan que las contraseñas se almacenen de forma segura (nunca en texto plano). Las funciones de JWT permiten generar tokens para autenticar usuarios y proteger rutas.
+
+### Variables de entorno
+
+![Variables de entorno](images/env_variables.png)
+
+**Propósito:** Configurar parámetros sensibles para JWT.
+
+**Explicación:** Las variables `SECRET_KEY`, `ALGORITHM` y `ACCESS_TOKEN_EXPIRE_MINUTES` se almacenan en `.env` para no hardcodear valores sensibles en el código. Esto es una buena práctica de seguridad.
