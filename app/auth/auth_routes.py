@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from app.schemas.auth_schema import UserRegister, UserLogin, Token
 from app.schemas.user_schema import UserResponse
@@ -6,6 +6,7 @@ from app.auth.auth_service import register_user, authenticate_user, create_acces
 from app.dependencies.database_dependency import get_db
 from app.dependencies.auth_dependency import get_current_user
 from app.models.user_model import User
+from app.config.limiter import limiter 
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
@@ -16,7 +17,9 @@ router = APIRouter(prefix="/auth", tags=["Autenticación"])
     summary="Registrar un nuevo usuario",
     description="Crea un usuario con contraseña segura. Valida que el email sea único y la contraseña cumpla los requisitos."
 )
+@limiter.limit("3/minute")
 def register(
+    request: Request,
     user_data: UserRegister,
     db: Session = Depends(get_db)
 ):
@@ -35,7 +38,9 @@ def register(
     summary="Iniciar sesión",
     description="Autentica un usuario y devuelve un token JWT."
 )
+@limiter.limit("5/minute")
 def login(
+    request: Request,
     user_credentials: UserLogin,
     db: Session = Depends(get_db)
 ):

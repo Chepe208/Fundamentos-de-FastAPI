@@ -12,6 +12,8 @@ from app.services.device_service import (
     delete_device
 )
 from app.dependencies.database_dependency import get_db
+from app.dependencies.auth_dependency import get_current_active_user, require_admin, require_admin_or_support
+from app.models.user_model import User
 
 router = APIRouter(prefix="/devices", tags=["Dispositivos"])
 
@@ -22,7 +24,8 @@ def list_devices(
     brand: Optional[str] = None,
     search: Optional[str] = None,
     db: Session = Depends(get_db),
-    response: Response = None
+    response: Response = None,
+    current_user: User = Depends(get_current_active_user)
 ):
     devices = get_devices(db, device_type, is_available, brand, search)
     if response:
@@ -34,7 +37,8 @@ def list_devices(
 def get_device(
     device_id: int,
     db: Session = Depends(get_db),
-    response: Response = None
+    response: Response = None,
+    current_user: User = Depends(get_current_active_user)
 ):
     device = get_device_by_id(db, device_id)
     if not device:
@@ -48,7 +52,8 @@ def get_device(
 def create_device_endpoint(
     device_data: DeviceCreate,
     db: Session = Depends(get_db),
-    response: Response = None
+    response: Response = None,
+    _: User = Depends(require_admin_or_support)
 ):
     try:
         new_device = create_device(db, device_data)
@@ -68,7 +73,8 @@ def update_device_endpoint(
     device_id: int,
     device_data: DeviceUpdate,
     db: Session = Depends(get_db),
-    response: Response = None
+    response: Response = None,
+    _: User = Depends(require_admin_or_support)
 ):
     existing = get_device_by_id(db, device_id)
     if not existing:
@@ -91,7 +97,8 @@ def patch_device_endpoint(
     device_id: int,
     device_data: DevicePatch,
     db: Session = Depends(get_db),
-    response: Response = None
+    response: Response = None,
+    _: User = Depends(require_admin_or_support)
 ):
     existing = get_device_by_id(db, device_id)
     if not existing:
@@ -119,10 +126,19 @@ def patch_device_endpoint(
 def delete_device_endpoint(
     device_id: int,
     db: Session = Depends(get_db),
-    response: Response = None
+    response: Response = None,
+    _: User = Depends(require_admin)
 ):
-    if not delete_device(db, device_id):
+    result = delete_device(db, device_id)
+    
+    if result == "has_loans":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede eliminar el dispositivo porque tiene préstamos asociados"
+        )
+    if not result:
         raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
+    
     if response:
         response.headers["X-App-Name"] = "device_systems"
         response.headers["X-API-Version"] = "1.0"

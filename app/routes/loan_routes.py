@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.schemas.loan_schema import LoanCreate, LoanResponse, LoanDetailResponse
@@ -7,8 +7,10 @@ from app.services.loan_service import (
     get_loans_with_details, get_loans_by_user, get_loans_by_device
 )
 from app.dependencies.database_dependency import get_db
+from app.dependencies.auth_dependency import get_current_active_user
 from app.models.user_model import User
 from app.models.device_model import Device
+from app.config.limiter import limiter 
 
 router = APIRouter(prefix="/loans", tags=["Préstamos"])
 
@@ -102,10 +104,13 @@ def get_loan(
     description="Registra el préstamo de un dispositivo a un usuario. Valida que el usuario y el dispositivo existan, y que el dispositivo esté disponible. Si todo es correcto, cambia el estado del dispositivo a 'no disponible'.",
     response_description="Préstamo creado exitosamente con código 201"
 )
+@limiter.limit("10/minute")
 def create_loan_endpoint(
+    request: Request,
     loan_data: LoanCreate,
     db: Session = Depends(get_db),
-    response: Response = None
+    response: Response = None,
+    current_user: User = Depends(get_current_active_user)
 ):
     try:
         new_loan = create_loan(db, loan_data)
