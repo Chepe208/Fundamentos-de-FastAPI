@@ -1867,3 +1867,75 @@ Se configuró CORS para permitir que aplicaciones frontend (como React, Vue, Ang
 ### ¿Por qué no se recomienda usar `"*"` en producción con credenciales?
 
 En producción, usar `allow_origins=["*"]` (permitir todos los orígenes) junto con `allow_credentials=True` **no está permitido** por el estándar CORS. Cuando `allow_credentials=True`, el navegador exige que `allow_origins` sea una lista específica de orígenes (no `"*"`). Además, permitir todos los orígenes puede exponer la API a ataques CSRF y accesos no autorizados. Por eso, en producción siempre se debe especificar exactamente los dominios que consumirán la API.
+
+## Fase 10 - Crear middleware personalizado
+
+Se implementó un middleware personalizado que intercepta todas las peticiones HTTP para añadir trazabilidad y métricas.
+
+### Funcionalidades del middleware
+
+| Funcionalidad | Descripción |
+|---------------|-------------|
+| Medición de tiempo | Calcula el tiempo de procesamiento de cada petición |
+| `X-Process-Time` | Cabecera con el tiempo en segundos (ej: `0.0042`) |
+| `X-App-Name` | Cabecera que identifica la aplicación (`device_systems`) |
+| `X-Request-ID` | Identificador único por petición (UUID) |
+| Logs en consola | Registra método, ruta, código de estado, tiempo y Request-ID |
+
+### Cabeceras personalizadas en la respuesta
+
+![Cabeceras del middleware](images/middleware_cabeceras.png)
+
+**Propósito:** Verificar que el middleware agrega correctamente las cabeceras esperadas.
+
+**Explicación:** En la respuesta de cualquier endpoint se pueden ver las cabeceras `X-Process-Time`, `X-App-Name` y `X-Request-ID`. Esto permite a los clientes de la API conocer el tiempo de procesamiento y tener un identificador único para cada petición.
+
+### Logs en la consola
+
+![Logs del middleware](images/middleware_logs.png)
+
+**Propósito:** Mostrar el registro de peticiones en la terminal del servidor.
+
+**Explicación:** Cada petición genera una línea en la consola con el método HTTP, la ruta, el código de estado, el tiempo de procesamiento y el Request-ID. Esto es útil para monitorear el tráfico y detectar posibles cuellos de botella.
+
+## Fase 11 - Aplicar rate limiting
+
+Se configuró rate limiting con `slowapi` para limitar peticiones abusivas en endpoints críticos.
+
+### Límites aplicados
+
+| Endpoint | Límite | Propósito |
+|----------|--------|-----------|
+| `POST /auth/login` | 5 por minuto | Prevenir ataques de fuerza bruta |
+| `POST /auth/register` | 3 por minuto | Evitar registros masivos automatizados |
+| `GET /users` | 30 por minuto | Limitar consultas excesivas a la lista de usuarios |
+| `POST /loans` | 10 por minuto | Controlar la creación masiva de préstamos |
+
+### Configuración del limiter
+
+Se creó el limiter en `app/main.py`:
+
+```python
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+```
+
+Y se aplicaron los decoradores en los endpoints correspondientes:
+
+```python
+@limiter.limit("5/minute")
+def login(request: Request, ...):
+    ...
+```
+
+## Prueba de rate limiting
+
+![Prueba de rate limiting](images/rate_limiting_429.png)
+
+**Propósito:** Verificar que el rate limiting funciona correctamente.
+
+**Explicación:** Se realizaron múltiples peticiones consecutivas a POST /auth/login con credenciales correctas. Al superar las 5 peticiones en el lapso de 1 minuto, la API respondió con 429 Too Many Requests y el mensaje `{"detail": "Rate limit exceeded: 5 per 1 minute"}`. Esto protege la API contra ataques de fuerza bruta y abusos, limitando la cantidad de intentos de autenticación que un cliente puede realizar en un período corto de tiempo.

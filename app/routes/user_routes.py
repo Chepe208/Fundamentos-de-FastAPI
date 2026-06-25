@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.schemas.user_schema import UserCreate, UserResponse, UserUpdate, UserPatch, RoleEnum
@@ -10,11 +10,14 @@ from app.services.user_service import (
 from app.dependencies.database_dependency import get_db
 from app.dependencies.auth_dependency import get_current_active_user
 from app.models.user_model import User
+from app.config.limiter import limiter
 
 router = APIRouter(prefix="/users", tags=["Usuarios"])
 
 @router.get("/", response_model=List[UserResponse])
+@limiter.limit("30/minute")
 def listar_usuarios(
+     request: Request,
     role: Optional[RoleEnum] = None,
     is_active: Optional[bool] = None,
     db: Session = Depends(get_db),
