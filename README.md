@@ -1652,3 +1652,124 @@ Se creó `app/auth/security.py` para manejar la seguridad de las contraseñas y 
 **Propósito:** Configurar parámetros sensibles para JWT.
 
 **Explicación:** Las variables `SECRET_KEY`, `ALGORITHM` y `ACCESS_TOKEN_EXPIRE_MINUTES` se almacenan en `.env` para no hardcodear valores sensibles en el código. Esto es una buena práctica de seguridad.
+
+## Fase 6 - Crear schemas de autenticación con Pydantic v2
+
+Se creó `app/schemas/auth_schema.py` con los schemas necesarios para el registro, login y manejo de tokens JWT.
+
+### Schemas implementados
+
+| Schema | Propósito |
+|--------|-----------|
+| `UserRegister` | Validar datos de registro (nombre, email, contraseña segura, rol) |
+| `UserLogin` | Validar credenciales de inicio de sesión |
+| `Token` | Estructurar la respuesta del token JWT |
+| `TokenData` | Representar los datos del token (email, rol, user_id) |
+
+### Validaciones de contraseña
+
+- Mínimo **8 caracteres**
+- Al menos una **mayúscula**
+- Al menos una **minúscula**
+- Al menos un **número**
+- **Sin espacios en blanco**
+
+### Código de los schemas
+
+![auth_schema.py](images/auth_schema_codigo.png)
+
+**Propósito:** Definir la estructura y validaciones de los datos de autenticación.
+
+**Explicación:** Se usó Pydantic v2 con `@field_validator` para validar la contraseña, `Field()` para metadatos y `ConfigDict(from_attributes=True)` para los schemas de respuesta.
+
+## Fase 7 – Implementar autenticación OAuth2 con JWT
+
+Se implementaron los endpoints de autenticación en `app/auth/auth_routes.py`:
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/auth/register` | Registra un nuevo usuario con contraseña segura |
+| POST | `/auth/login` | Inicia sesión y devuelve un token JWT |
+| GET | `/auth/me` | Obtiene los datos del usuario autenticado (requiere token) |
+
+### Servicio de autenticación (`auth_service.py`)
+
+![auth_service.py](images/auth_service_codigo.png)
+
+**Propósito:** Contener la lógica de registro, autenticación y generación de tokens.
+
+**Explicación:** `register_user` valida email único y hashea la contraseña. `authenticate_user` verifica credenciales. `create_access_token_for_user` genera el token JWT con los datos del usuario.
+
+### Endpoints de autenticación (`auth_routes.py`)
+
+![auth_routes.py](images/auth_routes_codigo.png)
+
+**Propósito:** Exponer los endpoints de registro, login y perfil.
+
+**Explicación:** Cada endpoint utiliza los servicios de autenticación y maneja errores apropiados (400, 401, 422). El endpoint `/auth/me` está protegido por la dependencia `get_current_user`.
+
+### Pruebas de autenticación
+
+#### Registro exitoso
+![Registro exitoso](images/auth_register_exitoso.png)
+
+**Propósito:** Verificar que se puede registrar un usuario correctamente.
+
+**Explicación:** Se envía un JSON con `name`, `email`, `password` y `role`. La API valida los datos, hashea la contraseña y retorna el usuario creado (sin `hashed_password`). Código 201.
+
+#### Registro con email duplicado
+![Email duplicado](images/auth_register_email_duplicado.png)
+
+**Propósito:** Validar que no se permite registrar dos veces el mismo email.
+
+**Explicación:** Se intenta registrar con un email ya existente. La API responde con 400 Bad Request y el mensaje "El email ya está registrado".
+
+#### Registro con contraseña débil
+![Contraseña débil](images/auth_register_password_debil.png)
+
+**Propósito:** Comprobar que las validaciones de contraseña funcionan.
+
+**Explicación:** Se envía una contraseña que no cumple los requisitos (ej: corta, sin mayúsculas). Pydantic rechaza la petición con 422 Unprocessable Entity y detalles de cada error.
+
+#### Login exitoso
+![Login exitoso](images/auth_login_exitoso.png)
+
+**Propósito:** Verificar que un usuario autenticado recibe un token JWT.
+
+**Explicación:** Se envía `email` y `password` correctos. La API responde con 200 OK y el token de acceso.
+
+#### Login con contraseña incorrecta
+![Login incorrecto](images/auth_login_incorrecto.png)
+
+**Propósito:** Validar que credenciales incorrectas devuelven 401 Unauthorized.
+
+**Explicación:** Se envía una contraseña errónea. La API responde con 401 y el mensaje "Credenciales incorrectas".
+
+#### /auth/me con token válido
+![auth/me exitoso](images/auth_me_exitoso.png)
+
+**Propósito:** Obtener los datos del usuario autenticado.
+
+**Explicación:** Se envía el token JWT en el encabezado `Authorization: Bearer <token>`. La API decodifica el token, busca al usuario y retorna sus datos (sin `hashed_password`). Código 200.
+
+#### /auth/me sin token
+![auth/me sin token](images/auth_me_sin_token.png)
+
+**Propósito:** Verificar que rutas protegidas requieren autenticación.
+
+**Explicación:** Se intenta acceder a `/auth/me` sin enviar token. La API responde con 401 Unauthorized.
+
+#### /auth/me con token inválido
+![auth/me token inválido](images/auth_me_token_invalido.png)
+
+**Propósito:** Validar que tokens falsos o expirados son rechazados.
+
+**Explicación:** Se envía un token falso. La API responde con 401 y el mensaje "Token inválido o expirado".
+
+### Documentación Swagger actualizada
+
+![Swagger con schemas de autenticación](images/swagger_auth_schemas.png)
+
+**Propósito:** Mostrar que los schemas de autenticación aparecen en Swagger UI.
+
+**Explicación:** FastAPI genera automáticamente la documentación con los nuevos schemas, lo que permite probar el registro y login desde la interfaz interactiva.
