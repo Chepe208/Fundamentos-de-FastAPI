@@ -1939,3 +1939,11 @@ def login(request: Request, ...):
 **Propósito:** Verificar que el rate limiting funciona correctamente.
 
 **Explicación:** Se realizaron múltiples peticiones consecutivas a POST /auth/login con credenciales correctas. Al superar las 5 peticiones en el lapso de 1 minuto, la API respondió con 429 Too Many Requests y el mensaje `{"detail": "Rate limit exceeded: 5 per 1 minute"}`. Esto protege la API contra ataques de fuerza bruta y abusos, limitando la cantidad de intentos de autenticación que un cliente puede realizar en un período corto de tiempo.
+
+## Reflexión final sobre la importancia de la seguridad en APIs REST
+
+la API era solo una herramienta para gestionar datos. Pero cuando pude ponerle autenticación, roles, hash de contraseñas, tokens JWT, middleware y rate limiting, pude entender que la seguridad es algo obligatorio, que se necesita para poder proteger los datos de los usuarios, controlar quién puede hacer qué, y limitar los abusos hace que se convierta en una API básica en una aplicación confiable. Aprendí que cada capa de seguridad suma, desde no guardar contraseñas en texto plano, hasta validar tokens en cada petición.
+
+### Link Video Youtube Evidencia 11
+
+https://youtu.be/LqcClYmABrk
