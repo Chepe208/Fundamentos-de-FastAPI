@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from app.routes.user_routes import router as user_router
 from app.routes.device_routes import router as device_router
-from app.routes.loan_routes import router as loan_router  
+from app.routes.loan_routes import router as loan_router 
+from app.auth.auth_routes import router as auth_router 
 from app.database.connection import engine, Base
 
 from app.models.user_model import User
@@ -17,6 +18,7 @@ app = FastAPI(
     contact={"name": "Jose Manuel Ruiz Zapata", "email": "jruizzapata38@gmail.com"},
 )
 
+app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(device_router)
 app.include_router(loan_router)

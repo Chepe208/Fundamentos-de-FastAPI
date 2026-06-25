@@ -1525,3 +1525,251 @@ Aunque en este proyecto nos enfocamos en la lógica de préstamos y relaciones, 
 ### Link Video Youtube Evidencia 10
 
 https://youtu.be/Zey7gZVWTq0
+
+## Fase 1 - Retomar el proyecto anterior
+
+Se ha creado la rama `device_systems_security` desde `device_systems_alembic_relaciones` que es la que el trabajo completo de la EV10. Esto asegura que todo el código de modelos, relaciones, joins y migraciones sigue para agregar la capa de seguridad.
+
+El proyecto base funciona correctamente con los recursos `users`, `devices` y `loans`, y sus endpoints CRUD y consultas con joins.
+
+A partir de esta base, se agregará autenticación con JWT, hash de contraseñas, protección de rutas, middleware personalizado, CORS y rate limiting.
+
+## Fase 2 - Actualizar la estructura del proyecto
+
+Se ha actualizado la estructura del proyecto para incluir los nuevos componentes de seguridad:
+
+- **`auth/`** : Contendrá la lógica de autenticación.
+- **`middlewares/`** : Para middleware personalizado.
+- **`dependencies/auth_dependency.py`** : Dependencias para proteger rutas como get_current_user, require_admin, etc.
+- **`schemas/auth_schema.py`** : Schemas Pydantic para registro, login y tokens.
+- **`.env` y `.env.example`** : Para variables de entorno.
+
+La estructura ahora queda preparada para implementar autenticación OAuth2 con JWT, hash de contraseñas, middleware de trazabilidad y rate limiting.
+
+![Estructura del proyecto EV11](images/estructura_ev11_fase2.png)
+
+**Propósito:** Organizar el proyecto para los nuevos módulos de seguridad.
+
+**Explicación:** Se crearon las carpetas y archivos necesarios para la autenticación y middleware. Esto mantiene la separación de responsabilidades y facilita el mantenimiento. Los archivos están vacíos por ahora y se llenarán en fases posteriores.
+
+## Fase 3 - Actualizar dependencias
+
+Se instalaron las dependencias necesarias para implementar autenticación, hash de contraseñas, rate limiting y manejo de variables de entorno.
+
+### Paquetes instalados
+
+| Paquete | Propósito |
+|---------|-----------|
+| `python-jose[cryptography]` | Generación y validación de tokens JWT |
+| `passlib[bcrypt]` | Hash seguro de contraseñas con bcrypt |
+| `slowapi` | Rate limiting para limitar peticiones abusivas |
+| `python-multipart` | Soporte para formularios en login |
+| `python-dotenv` | Carga de variables de entorno desde `.env` |
+
+### Instalación
+
+```bash
+pip install python-jose[cryptography] passlib[bcrypt] slowapi python-multipart python-dotenv
+```
+
+![Instalación dependencias seguridad](images/instalacion_dependencias_seguridad.png)
+
+**Propósito:** Añadir las librerías necesarias para la capa de seguridad.
+
+**Explicación:** Se ejecutó `pip install` con todas las dependencias y se actualizó `requirements.txt`. Todas se instalaron correctamente, como se muestra en la terminal.
+
+## Actualización de requirements.txt
+
+Después de instalar los paquetes, se actualizó `requirements.txt` con todas las dependencias:
+
+```bash
+pip freeze > requirements.txt
+```
+
+![Actualización de requirements.txt](images/requirements_seguridad.png)
+
+**Propósito:** Asegurar que el entorno de desarrollo pueda replicarse en otros equipos, incluyendo las nuevas librerías de seguridad.
+
+## Fase 4 - Mejorar el modelo User
+
+Se actualizó el modelo `User` para soportar autenticación, agregando los campos:
+
+- `hashed_password`: almacena la contraseña encriptada (nunca se expone en respuestas).
+- `role`: define el rol del usuario (`admin`, `support`, `user`), por defecto `"user"`.
+- `is_active`: indica si el usuario está activo, por defecto `True`.
+
+![Modelo User actualizado](images/user_model_autenticacion.png)
+
+**Propósito:** Preparar el modelo para almacenar credenciales de forma segura y manejar roles.
+
+**Explicación:** Se añadieron los campos necesarios para la autenticación y autorización. Luego se generó y aplicó una migración con Alembic para reflejar estos cambios en la base de datos.
+
+### Generación y aplicación de la migración
+
+```bash
+python -m alembic revision --autogenerate -m "add authentication fields to users"
+python -m alembic upgrade head
+```
+
+![Generación de migración](images/alembic_revision_auth.png)
+
+![Aplicación de migración](images/alembic_upgrade_auth.png)
+
+
+## Verificación de la tabla actualizada
+
+![Tabla users actualizada](images/tabla_users_auth.png)
+
+**Propósito:** Confirmar que la migración se aplicó correctamente.
+
+**Explicación:** Se abrió la base de datos con DB Browser for SQLite y se verificó que la tabla `users` ahora contiene las columnas `hashed_password`, `role` e `is_active`, todas con las restricciones definidas.
+
+## Fase 5 - Aplicar hash de contraseñas con passlib
+
+Se creó `app/auth/security.py` para manejar la seguridad de las contraseñas y la autenticación con tokens JWT.
+
+### Funciones implementadas
+
+| Función | Descripción |
+|---------|-------------|
+| `get_password_hash(password)` | Hashea una contraseña usando bcrypt. |
+| `verify_password(plain, hashed)` | Verifica si la contraseña coincide con su hash. |
+| `create_access_token(data)` | Genera un token JWT con los datos del usuario y expiración. |
+| `decode_access_token(token)` | Decodifica y valida un token JWT. |
+
+### Código de seguridad
+
+![security.py](images/security_py_codigo.png)
+
+**Propósito:** Centralizar la lógica de hash y JWT en un solo archivo reutilizable.
+
+**Explicación:** Las funciones de hash garantizan que las contraseñas se almacenen de forma segura (nunca en texto plano). Las funciones de JWT permiten generar tokens para autenticar usuarios y proteger rutas.
+
+### Variables de entorno
+
+![Variables de entorno](images/env_variables.png)
+
+**Propósito:** Configurar parámetros sensibles para JWT.
+
+**Explicación:** Las variables `SECRET_KEY`, `ALGORITHM` y `ACCESS_TOKEN_EXPIRE_MINUTES` se almacenan en `.env` para no hardcodear valores sensibles en el código. Esto es una buena práctica de seguridad.
+
+## Fase 6 - Crear schemas de autenticación con Pydantic v2
+
+Se creó `app/schemas/auth_schema.py` con los schemas necesarios para el registro, login y manejo de tokens JWT.
+
+### Schemas implementados
+
+| Schema | Propósito |
+|--------|-----------|
+| `UserRegister` | Validar datos de registro (nombre, email, contraseña segura, rol) |
+| `UserLogin` | Validar credenciales de inicio de sesión |
+| `Token` | Estructurar la respuesta del token JWT |
+| `TokenData` | Representar los datos del token (email, rol, user_id) |
+
+### Validaciones de contraseña
+
+- Mínimo **8 caracteres**
+- Al menos una **mayúscula**
+- Al menos una **minúscula**
+- Al menos un **número**
+- **Sin espacios en blanco**
+
+### Código de los schemas
+
+![auth_schema.py](images/auth_schema_codigo.png)
+
+**Propósito:** Definir la estructura y validaciones de los datos de autenticación.
+
+**Explicación:** Se usó Pydantic v2 con `@field_validator` para validar la contraseña, `Field()` para metadatos y `ConfigDict(from_attributes=True)` para los schemas de respuesta.
+
+## Fase 7 – Implementar autenticación OAuth2 con JWT
+
+Se implementaron los endpoints de autenticación en `app/auth/auth_routes.py`:
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/auth/register` | Registra un nuevo usuario con contraseña segura |
+| POST | `/auth/login` | Inicia sesión y devuelve un token JWT |
+| GET | `/auth/me` | Obtiene los datos del usuario autenticado (requiere token) |
+
+### Servicio de autenticación (`auth_service.py`)
+
+![auth_service.py](images/auth_service_codigo.png)
+
+**Propósito:** Contener la lógica de registro, autenticación y generación de tokens.
+
+**Explicación:** `register_user` valida email único y hashea la contraseña. `authenticate_user` verifica credenciales. `create_access_token_for_user` genera el token JWT con los datos del usuario.
+
+### Endpoints de autenticación (`auth_routes.py`)
+
+![auth_routes.py](images/auth_routes_codigo.png)
+
+**Propósito:** Exponer los endpoints de registro, login y perfil.
+
+**Explicación:** Cada endpoint utiliza los servicios de autenticación y maneja errores apropiados (400, 401, 422). El endpoint `/auth/me` está protegido por la dependencia `get_current_user`.
+
+### Pruebas de autenticación
+
+#### Registro exitoso
+![Registro exitoso](images/auth_register_exitoso.png)
+
+**Propósito:** Verificar que se puede registrar un usuario correctamente.
+
+**Explicación:** Se envía un JSON con `name`, `email`, `password` y `role`. La API valida los datos, hashea la contraseña y retorna el usuario creado (sin `hashed_password`). Código 201.
+
+#### Registro con email duplicado
+![Email duplicado](images/auth_register_email_duplicado.png)
+
+**Propósito:** Validar que no se permite registrar dos veces el mismo email.
+
+**Explicación:** Se intenta registrar con un email ya existente. La API responde con 400 Bad Request y el mensaje "El email ya está registrado".
+
+#### Registro con contraseña débil
+![Contraseña débil](images/auth_register_password_debil.png)
+
+**Propósito:** Comprobar que las validaciones de contraseña funcionan.
+
+**Explicación:** Se envía una contraseña que no cumple los requisitos (ej: corta, sin mayúsculas). Pydantic rechaza la petición con 422 Unprocessable Entity y detalles de cada error.
+
+#### Login exitoso
+![Login exitoso](images/auth_login_exitoso.png)
+
+**Propósito:** Verificar que un usuario autenticado recibe un token JWT.
+
+**Explicación:** Se envía `email` y `password` correctos. La API responde con 200 OK y el token de acceso.
+
+#### Login con contraseña incorrecta
+![Login incorrecto](images/auth_login_incorrecto.png)
+
+**Propósito:** Validar que credenciales incorrectas devuelven 401 Unauthorized.
+
+**Explicación:** Se envía una contraseña errónea. La API responde con 401 y el mensaje "Credenciales incorrectas".
+
+#### /auth/me con token válido
+![auth/me exitoso](images/auth_me_exitoso.png)
+
+**Propósito:** Obtener los datos del usuario autenticado.
+
+**Explicación:** Se envía el token JWT en el encabezado `Authorization: Bearer <token>`. La API decodifica el token, busca al usuario y retorna sus datos (sin `hashed_password`). Código 200.
+
+#### /auth/me sin token
+![auth/me sin token](images/auth_me_sin_token.png)
+
+**Propósito:** Verificar que rutas protegidas requieren autenticación.
+
+**Explicación:** Se intenta acceder a `/auth/me` sin enviar token. La API responde con 401 Unauthorized.
+
+#### /auth/me con token inválido
+![auth/me token inválido](images/auth_me_token_invalido.png)
+
+**Propósito:** Validar que tokens falsos o expirados son rechazados.
+
+**Explicación:** Se envía un token falso. La API responde con 401 y el mensaje "Token inválido o expirado".
+
+### Documentación Swagger actualizada
+
+![Swagger con schemas de autenticación](images/swagger_auth_schemas.png)
+
+**Propósito:** Mostrar que los schemas de autenticación aparecen en Swagger UI.
+
+**Explicación:** FastAPI genera automáticamente la documentación con los nuevos schemas, lo que permite probar el registro y login desde la interfaz interactiva.
