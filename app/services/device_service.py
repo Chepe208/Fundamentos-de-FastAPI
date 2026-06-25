@@ -4,6 +4,7 @@ from sqlalchemy import or_
 from app.models.device_model import Device
 from app.schemas.device_schema import DeviceCreate, DeviceUpdate, DevicePatch
 from typing import Optional
+from app.models.loan_model import Loan
 
 def create_device(db: Session, device_data: DeviceCreate) -> Device:
     db_device = Device(
@@ -74,6 +75,11 @@ def delete_device(db: Session, device_id: int) -> bool:
     db_device = get_device_by_id(db, device_id)
     if not db_device:
         return False
+
+    loans = db.query(Loan).filter(Loan.device_id == device_id).all()
+    if loans:
+        return "has_loans" 
+
     db.delete(db_device)
     db.commit()
     return True

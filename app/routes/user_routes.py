@@ -8,6 +8,8 @@ from app.services.user_service import (
     filtrar_por_rol, filtrar_por_estado, filtrar_por_rol_y_estado
 )
 from app.dependencies.database_dependency import get_db
+from app.dependencies.auth_dependency import get_current_active_user
+from app.models.user_model import User
 
 router = APIRouter(prefix="/users", tags=["Usuarios"])
 
@@ -16,7 +18,8 @@ def listar_usuarios(
     role: Optional[RoleEnum] = None,
     is_active: Optional[bool] = None,
     db: Session = Depends(get_db),
-    response: Response = None
+    response: Response = None,
+    current_user: User = Depends(get_current_active_user)
 ):
     if role and is_active is not None:
         usuarios = filtrar_por_rol_y_estado(db, role.value, is_active)
@@ -36,7 +39,8 @@ def listar_usuarios(
 def obtener_usuario(
     user_id: int,
     db: Session = Depends(get_db),
-    response: Response = None
+    response: Response = None,
+    current_user: User = Depends(get_current_active_user)
 ):
     usuario = obtener_por_id(db, user_id)
     if not usuario:

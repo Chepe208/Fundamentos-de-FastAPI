@@ -1773,3 +1773,97 @@ Se implementaron los endpoints de autenticación en `app/auth/auth_routes.py`:
 **Propósito:** Mostrar que los schemas de autenticación aparecen en Swagger UI.
 
 **Explicación:** FastAPI genera automáticamente la documentación con los nuevos schemas, lo que permite probar el registro y login desde la interfaz interactiva.
+
+## Fase 8 - Proteger rutas con dependencias
+
+Se implementaron dependencias de autenticación y autorización para proteger los endpoints existentes.
+
+### Dependencias implementadas
+
+| Dependencia | Propósito |
+|-------------|-----------|
+| `get_current_user` | Valida el token JWT y retorna el usuario autenticado |
+| `get_current_active_user` | Verifica que el usuario esté activo |
+| `require_admin` | Permite solo usuarios con rol `admin` |
+| `require_admin_or_support` | Permite usuarios con rol `admin` o `support` |
+
+### Protección por rutas
+
+| Ruta | Protección requerida |
+|------|----------------------|
+| GET /users | Usuario autenticado |
+| GET /users/{user_id} | Usuario autenticado |
+| POST /devices | Admin o support |
+| PUT /devices/{device_id} | Admin o support |
+| DELETE /devices/{device_id} | Admin |
+| POST /loans | Usuario autenticado |
+| PATCH /loans/{loan_id}/return | Admin o support |
+| GET /loans/details | Admin o support |
+
+### Pruebas de protección
+
+#### Acceso a /users sin token (401)
+![Acceso sin token](images/users_sin_token.png)
+
+**Propósito:** Verificar que las rutas protegidas requieren autenticación.
+
+**Explicación:** Se intenta acceder a `GET /users` sin enviar token. La API responde con 401 Unauthorized.
+
+#### Acceso a /users con token válido (200)
+![Acceso con token](images/users_con_token.png)
+
+**Propósito:** Demostrar que un usuario autenticado puede acceder a la ruta.
+
+**Explicación:** Se envía el token JWT en el encabezado `Authorization: Bearer <token>`. La API valida el token y retorna la lista de usuarios con 200 OK.
+
+#### Crear dispositivo con rol user (403)
+![Crear dispositivo con user](images/device_crear_usuario_403.png)
+
+**Propósito:** Verificar que un usuario sin permisos no puede crear dispositivos.
+
+**Explicación:** Se intenta `POST /devices` con un token de usuario con rol `user`. La API responde con 403 Forbidden.
+
+#### Crear dispositivo con rol admin (201)
+![Crear dispositivo con admin](images/device_crear_admin_201.png)
+
+**Propósito:** Verificar que un usuario con permisos puede crear dispositivos.
+
+**Explicación:** Se envía `POST /devices` con un token de usuario con rol `admin`. La API crea el dispositivo y responde con 201 Created.
+
+#### Eliminar dispositivo con rol support (403)
+![Eliminar dispositivo con support](images/device_eliminar_support_403.png)
+
+**Propósito:** Validar que un usuario con `support` no puede eliminar dispositivos.
+
+**Explicación:** Se intenta `DELETE /devices/1` con token de support. La API responde con 403 Forbidden.
+
+#### Eliminar dispositivo con rol admin (204)
+![Eliminar dispositivo con admin](images/device_eliminar_admin_204.png)
+
+**Propósito:** Verificar que un usuario `admin` puede eliminar dispositivos.
+
+**Explicación:** Se envía `DELETE /devices/1` con token de admin. La API elimina el dispositivo y responde con 204 No Content.
+
+### Documentación Swagger con OAuth2
+
+![Swagger con OAuth2](images/swagger_oauth2.png)
+
+**Propósito:** Mostrar que la documentación de FastAPI incluye el mecanismo de autenticación OAuth2.
+
+**Explicación:** Swagger UI ahora muestra el botón "Authorize" en la parte superior. Al hacer clic, permite ingresar el token JWT para probar endpoints protegidos. Los endpoints protegidos aparecen con un icono de candado.
+
+## Fase 9 - Configurar CORS
+
+Se configuró CORS para permitir que aplicaciones frontend (como React, Vue, Angular) consuman la API desde otros dominios o puertos.
+
+### Configuración en `main.py`
+
+![CORS en main.py](images/cors_configuracion.png)
+
+**Propósito:** Permitir que la API sea accesible desde clientes frontend en desarrollo.
+
+**Explicación:** Se añadió el middleware `CORSMiddleware` con `allow_origins` definido para `http://localhost:5173` (Vite) y `http://localhost:3000` (React). También se configuró `allow_credentials=True` para permitir el envío de cookies/tokens, `allow_methods=["*"]` para todos los métodos HTTP, y `allow_headers=["*"]` para todas las cabeceras.
+
+### ¿Por qué no se recomienda usar `"*"` en producción con credenciales?
+
+En producción, usar `allow_origins=["*"]` (permitir todos los orígenes) junto con `allow_credentials=True` **no está permitido** por el estándar CORS. Cuando `allow_credentials=True`, el navegador exige que `allow_origins` sea una lista específica de orígenes (no `"*"`). Además, permitir todos los orígenes puede exponer la API a ataques CSRF y accesos no autorizados. Por eso, en producción siempre se debe especificar exactamente los dominios que consumirán la API.
